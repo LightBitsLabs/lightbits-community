@@ -1,0 +1,25 @@
+---
+name: node00
+management_core: 0
+etcd_core: 0
+grub_cmdline_add_args:
+- memmap=1G!7G
+data_ifaces:
+- bootproto: static
+  conn_name: eth1
+  ifname: eth1
+  ip4: 10.10.230.10/24
+nodes:
+- instanceID: 0
+  data_ip: 10.10.230.10
+  failure_domains:
+  - node00
+  ec_enabled: false
+  lightfieldMode: SW_LF
+  storageDeviceLayout:
+    initialDeviceCount: 4
+    maxDeviceCount: 12
+    allowCrossNumaDevices: false
+    deviceMatchers:
+    - partition == false
+    - size >= gib(1)

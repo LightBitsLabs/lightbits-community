@@ -1,0 +1,30 @@
+node00  ansible_host=node00     ansible_connection=ssh  ansible_ssh_user=vagrant ansible_ssh_pass=vagrant ansible_become_user=root ansible_become_pass=vagrant ansible_ssh_common_args='-i ~/.vagrant.d/insecure_private_key'
+node01  ansible_host=node01     ansible_connection=ssh  ansible_ssh_user=vagrant ansible_ssh_pass=vagrant ansible_become_user=root ansible_become_pass=vagrant ansible_ssh_common_args='-i ~/.vagrant.d/insecure_private_key'
+node02  ansible_host=node02     ansible_connection=ssh  ansible_ssh_user=vagrant ansible_ssh_pass=vagrant ansible_become_user=root ansible_become_pass=vagrant ansible_ssh_common_args='-i ~/.vagrant.d/insecure_private_key'
+
+# new server to add to the cluster
+# uncomment following line when applying the add new server to LightOS cluster
+# node03        ansible_host=node03     ansible_connection=ssh  ansible_ssh_user=vagrant ansible_ssh_pass=vagrant ansible_become_user=root ansible_become_pass=vagrant ansible_ssh_common_args='-i ~/.vagrant.d/insecure_private_key'
+
+client0 ansible_host=client0    ansible_connection=ssh  ansible_ssh_user=vagrant ansible_ssh_pass=vagrant ansible_become_user=root ansible_become_pass=vagrant ansible_ssh_common_args='-i ~/.vagrant.d/insecure_private_key'
+
+[duros_nodes]
+node00
+node01
+node02
+# uncomment following line when applying the add new server to LightOS cluster
+# node03
+
+[duros_nodes:vars]
+auto_install=true
+cluster_identifier=addddeef-897e-4c5b-abef-20234abf6666
+
+[etcd]
+node00
+node01
+node02
+# uncomment following line when applying the add new server to LightOS cluster
+# node03
+
+[initiators]
+client0

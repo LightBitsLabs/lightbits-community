@@ -1,0 +1,155 @@
+---
+boxes:
+- name: node00
+  hostname: node00
+  description: duros node
+  box: generic/centos7
+  cpus: 9
+  cputopology:
+    sockets: '9'
+    cores: '1'
+    threads: '1'
+  cpu_execution_cap: 75
+  ram: 8000
+  ssh_port: 2201
+  public_networks:
+  - dev: "br1"
+    mode: "bridge"
+    type: "bridge"
+  provisioners:
+  - shell:
+    type: inline
+    entries:
+    - yum update -y
+    - grep -qF 'search lbits' /etc/resolv.conf || echo 'search lbits' >> /etc/resolv.conf
+  nvme:
+  - name: node00-nvme00.img
+    id: node00-nvme00
+    size: 1G
+  - name: node00-nvme01.img
+    id: node00-nvme01
+    size: 1G
+  - name: node00-nvme02.img
+    id: node00-nvme02
+    size: 1G
+  - name: node00-nvme03.img
+    id: node00-nvme03
+    size: 1G
+
+- name: node01
+  hostname: node01
+  description: duros node
+  box: generic/centos7
+  cpus: 9
+  cpu_execution_cap: 75
+  ram: 8000
+  ssh_port: 2202
+  public_networks:
+  - dev: "br1"
+    mode: "bridge"
+    type: "bridge"
+  provisioners:
+  - shell:
+    type: inline
+    entries:
+    - yum update -y
+    - grep -qF 'search lbits' /etc/resolv.conf || echo 'search lbits' >> /etc/resolv.conf
+  nvme:
+  - name: node01-nvme00.img
+    id: node01-nvme00
+    size: 1G
+  - name: node01-nvme01.img
+    id: node01-nvme01
+    size: 1G
+  - name: node01-nvme02.img
+    id: node01-nvme02
+    size: 1G
+  - name: node01-nvme03.img
+    id: node01-nvme03
+    size: 1G
+
+- name: node02
+  hostname: node02
+  description: duros node
+  box: generic/centos7
+  cpus: 9
+  cpu_execution_cap: 75
+  ram: 8000
+  ssh_port: 2203
+  public_networks:
+  - dev: "br1"
+    mode: "bridge"
+    type: "bridge"
+  provisioners:
+  - shell:
+    type: inline
+    entries:
+    - yum update -y
+    - grep -qF 'search lbits' /etc/resolv.conf || echo 'search lbits' >> /etc/resolv.conf
+  nvme:
+  - name: node02-nvme00.img
+    id: node02-nvme00
+    size: 1G
+  - name: node02-nvme01.img
+    id: node02-nvme01
+    size: 1G
+  - name: node02-nvme02.img
+    id: node02-nvme02
+    size: 1G
+  - name: node02-nvme03.img
+    id: node02-nvme03
+    size: 1G
+
+- name: node03
+  hostname: node03
+  description: duros node
+  box: generic/centos7
+  cpus: 9
+  cpu_execution_cap: 75
+  ram: 8000
+  ssh_port: 2203
+  public_networks:
+  - dev: "br1"
+    mode: "bridge"
+    type: "bridge"
+  provisioners:
+  - shell:
+    type: inline
+    entries:
+    - yum update -y
+    - grep -qF 'search lbits' /etc/resolv.conf || echo 'search lbits' >> /etc/resolv.conf
+  nvme:
+  - name: node03-nvme00.img
+    id: node03-nvme00
+    size: 1G
+  - name: node03-nvme01.img
+    id: node03-nvme01
+    size: 1G
+  - name: node03-nvme02.img
+    id: node03-nvme02
+    size: 1G
+  - name: node03-nvme03.img
+    id: node03-nvme03
+    size: 1G
+
+- name: client0
+  hostname: client0
+  description: nvme client
+  box: generic/fedora36
+  cpus: 3
+  cpu_execution_cap: 75
+  ram: 2048
+  ssh_port: 2204
+  public_networks:
+  - dev: "br1"
+    mode: "bridge"
+    type: "bridge"
+    ip: "10.20.20.14"
+  provisioners:
+  - shell:
+    type: inline
+    entries:
+    - dnf update -y
+    - dnf install -y python3 htop tcpdump nvme-cli
+    - grep -qxF 'nvme-tcp' /etc/modules-load.d/modules.conf || echo nvme-tcp | sudo tee -a /etc/modules-load.d/modules.conf
+  - reload: {}

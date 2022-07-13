@@ -1,0 +1,242 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# example: https://github.com/craighurley/vagrant-cloud-init
+
+require 'yaml'
+
+
+# detect linux distro
+def linux_distro
+  r = { :distro => nil, :family => nil }
+
+  if File.exists?('/etc/lsb-release')
+    File.open('/etc/lsb-release', 'r').read.each_line do |line|
+      r = { :distro => $1 } if line =~ /^DISTRIB_ID=(.*)/
+    end
+  end
+
+  if File.exists?('/etc/debian_version')
+    r[:distro] = 'Debian' if r[:distro].nil?
+    r[:family] = 'Debian' if r[:variant].nil?
+  elsif File.exists?('/etc/redhat-release') or File.exists?('/etc/centos-release')
+    r[:family] = 'RedHat' if r[:family].nil?
+    r[:distro] = 'CentOS' if File.exists?('/etc/centos-release')
+  elsif File.exists?('/etc/SuSE-release')
+    r[:distro] = 'SLES' if r[:distro].nil?
+  end
+
+  return r
+end
+
+
+# get details of boxes to build
+boxes_file = ENV["BOXES_VAR"] || 'boxes.yml'
+dir = File.expand_path("..", __FILE__)
+boxes_file = File.join(dir, boxes_file)
+puts "DIR: #{dir}, boxes_file: #{boxes_file}"
+
+boxes = YAML.load_file(boxes_file)
+
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+# API version
+VAGRANTFILE_API_VERSION = "2"
+
+required_plugins = %w( vagrant-hostmanager vagrant-libvirt vagrant-reload vagrant-sshfs )
+required_plugins.each do |plugin|
+    exec "vagrant plugin install #{plugin};vagrant #{ARGV.join(" ")}" unless Vagrant.has_plugin? plugin || ARGV[0] == 'plugin'
+end
+
+$libvirt_pool_name = ENV['STORAGE_POOL'] || "default"
+
+## extract the path of storage_pool in order to use it when creating emulated drives.
+$storage_pool_path = `virsh --connect qemu:///system pool-dumpxml #{$libvirt_pool_name} | grep -oP \"<path>\\K(.+)(?=<\/path>)\"`.strip
+if $storage_pool_path.empty?
+  $storage_pool_path = "/var/lib/libvirt/images"
+end
+puts "using storage_pool: #{$libvirt_pool_name}, storage_pool_path: #{$storage_pool_path}"
+
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  if Vagrant.has_plugin?("vagrant-hostmanager")
+    config.hostmanager.enabled = false
+    config.hostmanager.manage_guest = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.ignore_private_ip = false
+    config.hostmanager.include_offline = true
+  end
+
+  # Prevent TTY Errors (copied from laravel/homestead: "homestead.rb" file)... By default this is "bash -l".
+  # config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+  config.ssh.insert_key = false
+
+  boxes["boxes"].each do |box|
+    # puts "****** this is box: %s.\n" % box
+
+    config.vm.define box['name'] do |node|
+      # OS and hostname
+      node.vm.box = box['box']
+      if box['box_version']
+        node.vm.box_version = box['box_version']
+      end
+      node.vm.hostname = box['hostname']
+      node.vm.provision :hostmanager
+      # node.hostmanager.aliases = box['hostname']
+      customize_vm box, node
+
+      # vagrant-cachier caches apt/yum etc to speed subsequent vagrant up
+      # to enable, run:
+      #   vagrant plugin install vagrant-cachier
+      if Vagrant.has_plugin?("vagrant-cachier")
+        config.cache.scope = :box
+      end
+
+      # Add a bridged network
+      if box.key?('public_networks') then
+        box['public_networks'].each do |public_network|
+          if public_network.key?('ip') && public_network.key?('netmask') then
+            node.vm.network 'public_network', :mode => public_network['mode'], :dev  => public_network['dev'], :type => public_network['type'], :ip => public_network['ip'], :netmast => public_network['netmask']
+          else
+            node.vm.network 'public_network', :mode => public_network['mode'], :dev  => public_network['dev'], :type => public_network['type']
+          end
+        end
+      end
+
+      # Copy cloud-init files to tmp and provision
+      if box.key?('provision') then
+          if box['provision']['meta-data']
+              node.vm.provision :file, :source => box['provision']['meta-data']['src'], :destination => box['provision']['meta-data']['dest']
+          end
+          if box['provision']['user-data']
+              node.vm.provision :file, :source => box['provision']['user-data']['src'], :destination => box['provision']['user-data']['dest']
+          end
+          if box['provision']['script']
+              node.vm.provision :shell, :path => box['provision']['script']
+          end
+      end
+
+      if box.key?('provisioners') then
+        box['provisioners'].each do |provisioner|
+
+          if provisioner.key?('shell') then
+            if provisioner['type'] == "inline" then
+              provisioner['entries'].each do |entry|
+                node.vm.provision "shell", inline: entry
+              end
+            end
+            if provisioner['type'] == "path" then
+              provisioner['entries'].each do |entry|
+                node.vm.provision "shell", path: entry
+              end
+            end
+          end
+
+          if provisioner.key?('file') then
+            provisioner['entries'].each do |entry|
+              node.vm.provision "file", source: entry['src'], destination: entry['dest']
+            end
+          end
+
+          if provisioner.key?('reload') then
+            node.vm.provision :reload
+          end
+
+        end
+      end
+
+      if box.key?('nvme') then
+        node.trigger.before :up do |trigger|
+          trigger.name = "create nvme drives"
+          trigger.info = "traverse the boxes file and create any nvme emulation"
+          trigger.ruby do |env,machine|
+            if box.key?('nvme') then
+              box['nvme'].each do |nvme_drive|
+                drive_path = File.join($storage_pool_path, "#{nvme_drive['name']}")
+
+                `qemu-img create -f raw #{drive_path} #{nvme_drive['size']}`
+
+                linux_dist = linux_distro
+                # puts "distro is: " + linux_dist[:distro]
+                if linux_dist[:distro] == "Ubuntu" then
+                  File.chmod(0777, "#{drive_path}")
+                  FileUtils.chown("libvirt-qemu", "kvm", "#{drive_path}")
+                end
+                puts "box #{box['name']} created emulated nvme drive: #{nvme_drive}"
+              end
+            end
+          end
+        end
+
+        node.trigger.after :destroy do |trigger|
+          trigger.name = "delete nvme drives"
+          trigger.info = "traverse the boxes file and delete any nvme emulation."
+          trigger.ruby do |env,machine|
+            if box.key?('nvme') then
+              box['nvme'].each do |nvme_drive|
+                $drive_path = File.join($storage_pool_path, nvme_drive['name'])
+
+                if File.exist?($drive_path) then
+                  File.delete($drive_path)
+                  puts "box #{box['name']} deleted emulated nvme drive: #{nvme_drive}"
+                end
+              end
+            end
+          end
+        end
+      end
+
+    end  # finish iterating over the boxes
+
+    def customize_vm(box, config)
+      config.vm.synced_folder ".", "/vagrant", type: "sshfs"
+      # With so much RAM and CPUs
+      config.vm.provider :libvirt do |libvirt|
+        # puts "****** calling customize_vm.\n"
+        libvirt.driver = "kvm"
+        libvirt.disk_bus = "virtio"
+        libvirt.memory = box['ram']
+        libvirt.cpus = box['cpus']
+        libvirt.storage_pool_name = $libvirt_pool_name
+        unless box.key?('dualNUMA') then
+		      libvirt.cpu_mode = "host-passthrough"
+	      end
+
+        if box.key?('dualNUMA') then
+          libvirt.numa_nodes = [
+            {:id => 0, :cpus => "0-#{box['cpus']/2-1}", :memory => "#{box['ram']/2}"},
+            {:id => 1, :cpus => "#{box['cpus']/2}-#{box['cpus']-1}", :memory => "#{box['ram']/2}"}
+          ]
+          libvirt.cputopology :sockets => '2', :cores => "#{box['cpus']/2}", :threads => '1'
+        end
+
+        if box.key?('nvme-passthrough') then
+          box['nvme-passthrough'].each do |nvme_device|
+            if (nvme_device['bus']) then
+              libvirt.pci :domain => "0x0000", :bus => "0x#{nvme_device['bus']}", :slot => "0x00", :function => "0x0"
+            end
+          end
+        end
+
+        if box.key?('nvme') then
+          box['nvme'].each do |nvme_drive|
+            # we put nvme_disk inside default pool to eliminate libvirt/SELinux Permissions Problems
+            # and to be able to run vagrant from user $HOME directory
+            drive_path = File.join($storage_pool_path, "#{nvme_drive['name']}")
+
+            libvirt.qemuargs :value => "-drive"
+            libvirt.qemuargs :value => "file=#{drive_path},format=raw,if=none,id=#{nvme_drive['id']}"
+            libvirt.qemuargs :value => "-device"
+            libvirt.qemuargs :value => "nvme,drive=#{nvme_drive['id']},serial=#{nvme_drive['id']}"
+          end
+        end
+      end
+    end
+  end
+end

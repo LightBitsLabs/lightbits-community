@@ -1,0 +1,8 @@
+---
+name: client0
+data_ifaces:
+- bootproto: static
+  conn_name: eth1
+  ifname: eth1
+  ip4: 10.10.230.14/24
+data_ip: 10.10.230.14
