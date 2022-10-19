@@ -58,6 +58,23 @@ if $storage_pool_path.empty?
 end
 puts "using storage_pool: #{$libvirt_pool_name}, storage_pool_path: #{$storage_pool_path}"
 
+def machine_exists(vm_name)
+  if get_machine_id(vm_name).nil?
+    return false
+  else
+    return true
+  end
+end
+
+def get_machine_id(vm_name)
+  machine_id_filepath = ".vagrant/machines/#{vm_name}/#{ENV['VAGRANT_DEFAULT_PROVIDER']}/id"
+  if not File.exists? machine_id_filepath
+    return nil
+  else
+    return File.read(machine_id_filepath)
+  end
+end
+
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -156,7 +173,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           trigger.name = "create nvme drives"
           trigger.info = "traverse the boxes file and create any nvme emulation"
           trigger.ruby do |env,machine|
-            if box.key?('nvme') then
+            if machine_exists("#{box['name']}") then
+              puts "skipping creation of emulated nvme ssds for #{box['name']} box. not first time boot"
+            else
               box['nvme'].each do |nvme_drive|
                 drive_path = File.join($storage_pool_path, "#{nvme_drive['name']}")
 
@@ -178,14 +197,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           trigger.name = "delete nvme drives"
           trigger.info = "traverse the boxes file and delete any nvme emulation."
           trigger.ruby do |env,machine|
-            if box.key?('nvme') then
-              box['nvme'].each do |nvme_drive|
-                $drive_path = File.join($storage_pool_path, nvme_drive['name'])
+            box['nvme'].each do |nvme_drive|
+              $drive_path = File.join($storage_pool_path, nvme_drive['name'])
 
-                if File.exist?($drive_path) then
-                  File.delete($drive_path)
-                  puts "box #{box['name']} deleted emulated nvme drive: #{nvme_drive}"
-                end
+              if File.exist?($drive_path) then
+                File.delete($drive_path)
+                puts "box #{box['name']} deleted emulated nvme drive: #{nvme_drive}"
               end
             end
           end
