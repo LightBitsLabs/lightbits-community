@@ -7,7 +7,7 @@ echo "Defaults:$USER timestamp_timeout=10" | sudo su -c 'EDITOR="tee" visudo -f 
 sudo dnf update -y
 # Setup Libvirt
 sudo dnf install -y qemu-kvm libvirt libguestfs-tools virt-install rsync \
-	libvirt-devel virt-top guestfs-tools \
+        libvirt-devel virt-top guestfs-tools gcc libxml2-devel make ruby-devel \
         python3-pip sshfs sshpass
 
 # Install Vagrant
