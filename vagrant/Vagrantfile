@@ -119,7 +119,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if box.key?('public_networks') then
         box['public_networks'].each do |public_network|
           if public_network.key?('ip') && public_network.key?('netmask') then
-            node.vm.network 'public_network', :mode => public_network['mode'], :dev  => public_network['dev'], :type => public_network['type'], :ip => public_network['ip'], :netmast => public_network['netmask']
+            node.vm.network 'public_network', :mode => public_network['mode'], :dev  => public_network['dev'], :type => public_network['type'], :ip => public_network['ip'], :netmask => public_network['netmask']
           else
             node.vm.network 'public_network', :mode => public_network['mode'], :dev  => public_network['dev'], :type => public_network['type']
           end
