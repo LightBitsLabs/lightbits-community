@@ -507,6 +507,10 @@ node02                    running (libvirt)
 
 ## Installing Lightbits Cluster on Provisioned VMs
 
+> NOTE:
+>
+> For detailed information about installing and configuring Lightbits Cluster please see [online-documentation](https://www.lightbitslabs.com/support/).
+
 Once we have 3 servers running `node00`, `node01` and `node02` we are ready to install Lightbits on these VMs.
 
 Lightbits provide an `Ansible` playbook that automates this process.
