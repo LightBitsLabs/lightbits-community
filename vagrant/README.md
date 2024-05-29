@@ -173,7 +173,7 @@ echo "Defaults:$USER timestamp_timeout=10" | sudo su -c 'EDITOR="tee" visudo -f 
 sudo dnf update -y
 # Setup Libvirt
 sudo dnf install -y qemu-kvm libvirt libguestfs-tools virt-install rsync \
-	libvirt-devel virt-top guestfs-tools \
+        libvirt-devel virt-top guestfs-tools gcc libxml2-devel make ruby-devel \
         python3-pip sshfs sshpass
 
 # Install Vagrant
@@ -519,45 +519,42 @@ Please contact Lightbits Support team to get Lightbits Ansible collection.
 
 ### Install Ansible and Other Dependencies
 
-We provide a simple script that will install `Ansible` at the supported version and other python3 packages we use during deployment.
+We provide a simple script that will install `Docker` since we would use our `lb-ansible` docker image for installing
+the Lightbits cluster.
 
 This can be installed on any server, we will setup the Hypervisor server as Ansible-Controller.
 
 Example invocation of the script:
 
 ```bash
-./scripts/install_ansible_and_deps.sh
+./scripts/install_docker_ubuntu.sh
 ```
 
 <details>
-  <summary>Click to expand ./scripts/install_ansible_and_deps.sh content</summary>
+  <summary>Click to expand ./scripts/install_docker_ubuntu.sh content</summary>
 
-[embedmd]:#(./scripts/install_ansible_and_deps.sh)
+[embedmd]:#(./scripts/install_docker_ubuntu.sh)
 ```sh
 #!/usr/bin/env bash
-set -a -x -e
 
-function install_dependencies {
-    if [[ -f /etc/os-release ]]; then
-        # freedesktop.org and systemd
-        . /etc/os-release
-        OS=$NAME
-        VER=$VERSION_ID
-    fi
+# Add Docker's official GPG key:
+sudo apt-get update -y
+sudo apt-get install ca-certificates curl -y
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-    if [[ $OS == "Fedora Linux" ]]; then
-            sudo dnf install python3-pip -y
-    elif [[ $OS == "Ubuntu" ]]; then
-            sudo apt-get install python3-pip -y
-    fi
-}
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update -y
 
-install_dependencies
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
-# install Ansible and python dependencies to run LightOS deployment playbook
-LANG=en_US.utf-8 pip3 install --user netaddr selinux ansible==4.2.0 python_jwt
+sudo usermod -aG docker $USER
 ```
-
 </details>
 
 ### Extract Ansible playbooks and roles
@@ -636,7 +633,7 @@ client0
 
 Each node has a specific config yml under `host_vars/<node-name>.yml`
 
-Detailed explanation of each machine can be found on [Lightbits Installation Guide](https://www.lightbitslabs.com/LDQdUm8EUnDkm93Z/v2/file/Install-Guide/html/).
+Detailed explanation of each machine can be found on [Lightbits Installation Guide](https://documentation.lightbitslabs.com/lightbits-private-cloud/host-server-configuration).
 
 > **NOTE:**
 >
@@ -647,6 +644,8 @@ Detailed explanation of each machine can be found on [Lightbits Installation Gui
 
 ### Install LightOS on VMs Using Ansible
 
+For detailed information about installation process follow [running-the-ansible-installation-playbook](https://documentation.lightbitslabs.com/lightbits-private-cloud/running-the-ansible-installation-playbook)
+
 Once we configured all the parameters in the `host_vars` and `hosts` file, issue the following command:
 
 > **NOTE:**
@@ -655,11 +654,36 @@ Once we configured all the parameters in the `host_vars` and `hosts` file, issue
 > - option `-K` will require you to provide the Ansible-Controller prevailed user password in order to install some binaries on the Ansible-Controller if they are not present.
 > - rename all fields enclosed in `<>` according to your environment
 
+> **NOTE:**
+>
+> Correct Docker URL is required:
+>
+> `docker.lightbitslabs.com/lightos-3-(Minor Ver)-(Rev)-rhl-(8/9)/lb-ansible:v9.1.0`. **Path requires substitution**
+>
+> Refer to the Lightbits Installation Customer Addendum for the correct Docker image URL.
+
+#### Docker Login
+
+In order to pull this image from our registry you will need to first login to the registry
+
+Run following command:
+
+```bash
+docker login docker.lightbitslabs.com
+Username: lightos-3-(Minor Ver)-(Rev)-rhl-(8/9)
+Password: ******
+```
+
+> NOTE:
+>
+> username: is the repository name for example - lightos-3-9-1-rhl-9
+> password: recieved from Lightbits Addendum. (same as `USERKEY`)
+
 Add to `path/to/virtual-light/vagrant/inventory/group_vars/all.yml` the following lines:
 
 ```yaml
 datapath_config: virtual-datapath-templates
-local_repo_base_url: https://dl.lightbitslabs.com/<USERKEY>/lightos-2-<Minor Ver>-x-ga/rpm/el/7/$basearch
+local_repo_base_url: https://dl.lightbitslabs.com/<USERKEY>/lightos-3-<Minor Ver>-<Patch>-rhl-8/rpm/el/8/$basearch
 ```
 
 And invoke our playbook:
@@ -714,8 +738,19 @@ ansible-playbook \
     -vvv -K
 ```
 
-## Destroy Vagrant VMs
+## Cleanup
+
+### Destroy Vagrant VMs
 
 ```bash
 BOXES_VAR=boxes.yml vagrant destroy -f
+```
+
+### Delete Bridge
+
+In case we created a bridge for external IP connectivity you can run the following commands to remove it:
+
+```bash
+sudo ip link set br1 down
+sudo nmcli connection delete br1
 ```
