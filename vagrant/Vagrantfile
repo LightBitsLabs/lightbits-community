@@ -118,7 +118,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       # Add a bridged network
       if box.key?('public_networks') then
         box['public_networks'].each do |public_network|
-          if public_network.key?('ip') && public_network.key?('netmask') then
+          if public_network.key?('dhcp') then
+            #node.vm.network "public_network", :dev => "br1", :bridge => "br1", :use_dhcp_assigned_default_route => true
+            node.vm.network "public_network", :dev => public_network['dev'], bridge: public_network['dev'], :use_dhcp_assigned_default_route => true
+          elsif public_network.key?('ip') && public_network.key?('netmask') then
             node.vm.network 'public_network', :mode => public_network['mode'], :dev  => public_network['dev'], :type => public_network['type'], :ip => public_network['ip'], :netmask => public_network['netmask']
           else
             node.vm.network 'public_network', :mode => public_network['mode'], :dev  => public_network['dev'], :type => public_network['type']
