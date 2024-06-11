@@ -187,8 +187,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 linux_dist = linux_distro
                 # puts "distro is: " + linux_dist[:distro]
                 if linux_dist[:distro] == "Ubuntu" then
-                  File.chmod(0777, "#{drive_path}")
-                  FileUtils.chown("libvirt-qemu", "kvm", "#{drive_path}")
+                  #File.chmod(0777, "#{drive_path}")
+                  #FileUtils.chown("libvirt-qemu", "kvm", "#{drive_path}")
                 end
                 puts "box #{box['name']} created emulated nvme drive: #{nvme_drive}"
               end
