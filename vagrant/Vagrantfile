@@ -225,8 +225,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         libvirt.cpus = box['cpus']
         libvirt.storage_pool_name = $libvirt_pool_name
         unless box.key?('dualNUMA') then
-		      libvirt.cpu_mode = "host-passthrough"
-	      end
+            libvirt.cpu_mode = "host-passthrough"
+	end
 
         if box.key?('dualNUMA') then
           libvirt.numa_nodes = [
@@ -245,7 +245,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         if box.key?('nvme') then
-          box['nvme'].each do |nvme_drive|
+          box['nvme'].each_with_index do |nvme_drive,i|
             # we put nvme_disk inside default pool to eliminate libvirt/SELinux Permissions Problems
             # and to be able to run vagrant from user $HOME directory
             drive_path = File.join($storage_pool_path, "#{nvme_drive['name']}")
@@ -253,7 +253,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             libvirt.qemuargs :value => "-drive"
             libvirt.qemuargs :value => "file=#{drive_path},format=raw,if=none,id=#{nvme_drive['id']}"
             libvirt.qemuargs :value => "-device"
-            libvirt.qemuargs :value => "nvme,drive=#{nvme_drive['id']},serial=#{nvme_drive['id']}"
+            libvirt.qemuargs :value => "nvme,drive=#{nvme_drive['id']},serial=#{nvme_drive['id']},bus=pci.0,addr=0x8.#{(i+1).to_s(16)}"
           end
         end
       end
