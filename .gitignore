@@ -1,2 +1,8 @@
 .vagrant
 vagrant/.vagrant
+
+lbprox.egg-info/
+__pycache__
+.venv
+
+index.html

@@ -4,6 +4,7 @@
   - [Overview](#overview)
   - [Current Virtual Environments](#current-virtual-environments)
   - [Future Environments](#future-environments)
+  - [Disclaimers and Limitations of Liability](#disclaimers-and-limitations-of-liability)
 
 ## Overview
 
@@ -16,16 +17,16 @@ that just want to play with the system, try installation, upgrade, working again
 
 ## Current Virtual Environments
 
-1. [All-In-One Vagrant deployment using libvirt provider.](./vagrant/README.md)
+1. [Deployment on Proxmox.](./proxmox/lbprox/README.md)
+2. [All-In-One Vagrant deployment using libvirt provider.](./vagrant/README.md)
 
 ## Future Environments
 
-1. Lightbits on kubernetes using Kube-Virt.
+1. Lightbits on kubernetes using Libvirt.
 2. Lightbits on Openstack.
 3. Lightbits on VMWare.
 4. Lightbits on oVirt.
 
-
-# Disclaimers and Limitations of Liability
+## Disclaimers and Limitations of Liability
 
 THIS REPOSITORY IS NOT FOR PRODUCTION USE AND SERVES ONLY AS A REFERENCE FOR DEPLOYING LIGHTBITS' CLUSTERS AND CONFIGURATION FOR PROOF OF CONCEPT PURPOSES ONLY. THIS REPOSITORY IS PROVIDED BY LIGHTBITS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LIGHTBITS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES, LOSS OF USE, LOSS AND/OR CORRUPTION OF DATA, LOST PROFITS, OR BUSINESS INTERRUPTION) OR ANY OTHER LOSS HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS REPOSITORY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. DO NOT PLACE VALUABLE DATA ON THIS PROVISIONAL CLUSTER WITHOUT PRIOR BACKUP.

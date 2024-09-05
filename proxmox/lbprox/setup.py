@@ -1,0 +1,31 @@
+from setuptools import setup
+
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
+setup(
+    name='lbprox',
+    version='0.1.0',
+    install_requires=requirements,
+    packages=['lbprox',
+              'lbprox/ssh',
+              'lbprox/allocations',
+              'lbprox/flavors',
+              'lbprox/cli',
+              'lbprox/common',
+              'lbprox/deployment',
+              'lbprox/cli/allocations',
+              'lbprox/cli/data_network',
+              'lbprox/cli/image_store',
+              'lbprox/cli/os_images',
+              'lbprox/cli/dashboard',
+              'lbprox/cli/prom_discovery',
+              'lbprox/cli/nodes',
+              'lbprox/dashboard'
+    ],          
+    entry_points={
+        'console_scripts': [
+            'lbprox = lbprox.main:main'
+        ]
+    }
+)

@@ -1,0 +1,54 @@
+name: lightbits_cluster_12x_target_tiny_1numa_emulated_ssd_1x_client
+description: "12 tiny target cluster with 1 client"
+machines:
+- name: s00
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s01
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s02
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s03
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s04
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s05
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s06
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s07
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s08
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s09
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s10
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: s11
+  machine_type: target-tiny-1numa-emulated-ssd
+  role: target
+
+- name: client0
+  machine_type: initiator-small
+  role: initiator
