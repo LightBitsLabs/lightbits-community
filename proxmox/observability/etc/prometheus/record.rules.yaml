@@ -1,0 +1,344 @@
+groups:
+- name: volume.rules
+  interval: 10s   # defaults to global interval
+  rules:
+  - record: instance:volume:volume_read_total_0_1K
+    expr: sum(lightbox_fe_volume_read_total_0_1K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_read_requests_0_1K
+    expr: sum(lightbox_fe_volume_read_requests_0_1K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_read_total_1K_8K
+    expr: sum(lightbox_fe_volume_read_total_1K_8K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_read_requests_1K_8K
+    expr: sum(lightbox_fe_volume_read_requests_1K_8K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_read_total_8K_32K
+    expr: sum(lightbox_fe_volume_read_total_8K_32K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_read_requests_8K_32K
+    expr: sum(lightbox_fe_volume_read_requests_8K_32K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_read_total_32K_128K
+    expr: sum(lightbox_fe_volume_read_total_32K_128K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_read_requests_32K_128K
+    expr: sum(lightbox_fe_volume_read_requests_32K_128K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_total_0_1K
+    expr: sum(lightbox_fe_volume_write_total_0_1K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_requests_0_1K
+    expr: sum(lightbox_fe_volume_write_requests_0_1K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_total_1K_8K
+    expr: sum(lightbox_fe_volume_write_total_1K_8K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_requests_1K_8K
+    expr: sum(lightbox_fe_volume_write_requests_1K_8K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_total_8K_32K
+    expr: sum(lightbox_fe_volume_write_total_8K_32K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_requests_8K_32K
+    expr: sum(lightbox_fe_volume_write_requests_8K_32K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_total_32K_128K
+    expr: sum(lightbox_fe_volume_write_total_32K_128K) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_write_requests_32K_128K
+    expr: sum(lightbox_fe_volume_write_requests_32K_128K) by (project_name, volume_id, volume_name, nsid, job)
+
+  - record: instance:volume:volume_write_request_duration_0K_1K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_0_1K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_0K_1K_count[1m]))
+  - record: instance:volume:volume_write_request_duration_1K_8K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_1K_8K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_1K_8K_count[1m]))
+  - record: instance:volume:volume_write_request_duration_8K_32K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_8K_32K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_8K_32K_count[1m]))
+  - record: instance:volume:volume_write_request_duration_32K_128K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_32K_128K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_32K_128K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_0K_1K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_0_1K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_0K_1K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_1K_8K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_1K_8K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_1K_8K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_8K_32K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_8K_32K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_8K_32K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_32K_128K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_32K_128K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_32K_128K_count[1m]))
+
+  - record: instance:volume:freestorage
+    expr: lightbox_volumes_capacity_bytes - lightbox_volumes_logical_used_storage_bytes
+  - record: instance:volume:total_reads_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) (lightbox_fe_volume_read_requests_0_1K + lightbox_fe_volume_read_requests_1K_8K + lightbox_fe_volume_read_requests_8K_32K + lightbox_fe_volume_read_requests_32K_128K)
+  - record: instance:volume:total_writes_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) (lightbox_fe_volume_write_requests_0_1K + lightbox_fe_volume_write_requests_1K_8K + lightbox_fe_volume_write_requests_8K_32K + lightbox_fe_volume_write_requests_32K_128K)
+  - record: instance:volume:read_iops_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) ((rate(lightbox_fe_volume_read_requests_0_1K[1m])) + (rate(lightbox_fe_volume_read_requests_1K_8K[1m])) +  (rate(lightbox_fe_volume_read_requests_8K_32K[1m])) + (rate(lightbox_fe_volume_read_requests_32K_128K[1m])))
+  - record: instance:volume:write_iops_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) ((rate(lightbox_fe_volume_write_requests_0_1K[1m])) + (rate(lightbox_fe_volume_write_requests_1K_8K[1m])) +  (rate(lightbox_fe_volume_write_requests_8K_32K[1m])) + (rate(lightbox_fe_volume_write_requests_32K_128K[1m])))
+  - record: instance:volume:total_read_bytes_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) (lightbox_fe_volume_read_total_0_1K + lightbox_fe_volume_read_total_1K_8K + lightbox_fe_volume_read_total_8K_32K + lightbox_fe_volume_read_total_32K_128K)
+  - record: instance:volume:total_write_bytes_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) (lightbox_fe_volume_write_total_0_1K + lightbox_fe_volume_write_total_1K_8K + lightbox_fe_volume_write_total_8K_32K + lightbox_fe_volume_write_total_32K_128K)
+  - record: instance:volume:read_throughput_per_volume
+    expr: sum by(project_name, volume_id, volume_name, nsid, job) (rate(lightbox_fe_volume_read_total_0_1K[1m]) + rate(lightbox_fe_volume_read_total_1K_8K[1m]) + rate(lightbox_fe_volume_read_total_8K_32K[1m]) +  rate(lightbox_fe_volume_read_total_32K_128K[1m]))
+  - record: instance:volume:write_throughput_per_volume
+    expr: sum by(project_name, volume_id, volume_name, nsid, job) (rate(lightbox_fe_volume_write_total_0_1K[1m]) + rate(lightbox_fe_volume_write_total_1K_8K[1m]) + rate(lightbox_fe_volume_write_total_8K_32K[1m]) +  rate(lightbox_fe_volume_write_total_32K_128K[1m]))
+  - record: instance:volume:avg_read_size_per_volume
+    expr: delta(instance:volume:total_read_bytes_per_volume[1m]) / delta(instance:volume:total_reads_per_volume[1m])
+  - record: instance:volume:avg_write_size_per_volume
+    expr: delta(instance:volume:total_write_bytes_per_volume[1m]) / delta(instance:volume:total_writes_per_volume[1m])
+  - record: instance:volume:logical_used_storage
+    expr: max(lightbox_clustering_volume_logical_used_storage) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:physical_used_storage
+    expr: max(lightbox_clustering_volume_physical_used_storage) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:physical_capacity
+    expr: max(lightbox_clustering_volume_physical_capacity) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:physical_owned_capacity
+    expr: max(lightbox_clustering_volume_physical_owned_capacity) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:physical_memory
+    expr: max(lightbox_clustering_volume_physical_memory) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:physical_owned_memory
+    expr: max(lightbox_clustering_volume_physical_owned_memory) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_rebuild_progress
+    expr: max(lightbox_clustering_volume_rebuild_progress) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_state_not_available
+    expr: max(lightbox_clustering_volume_state_not_available) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:volume_state_read_only
+    expr: max(lightbox_clustering_volume_state_read_only) by (project_name, volume_id, volume_name, nsid, job) * (1-instance:volume:volume_state_not_available)
+  - record: instance:volume:volume_state_degraded
+    expr: max(lightbox_clustering_volume_state_degraded) by (project_name, volume_id, volume_name, nsid, job) * (1-instance:volume:volume_state_read_only) * (1-instance:volume:volume_state_not_available)
+  - record: instance:volume:volume_migrating
+    expr: max(lightbox_clustering_migrating) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:compression_ratio
+    expr: clamp_max(clamp_min(instance:volume:physical_used_storage, 1) /  clamp_min(instance:volume:logical_used_storage, 1) , 1)
+  - record: instance:volume:volume_state_fully_protected
+    expr: max(lightbox_clustering_volume_state_fully_protected) by (project_name, volume_id, volume_name, nsid, job) * (1-instance:volume:volume_state_degraded) * (1-instance:volume:volume_state_read_only) * (1-instance:volume:volume_state_not_available)
+  - record: instance:snapshot:physical_capacity
+    expr: max(lightbox_clustering_snapshot_physical_capacity) by (project_name, snapshot_id, snapshot_name, src_volume_uuid, job)
+  - record: instance:snapshot:physical_owned_capacity
+    expr: max(lightbox_clustering_snapshot_physical_owned_capacity) by (project_name, snapshot_id, snapshot_name, src_volume_uuid, job)
+  - record: instance:snapshot:physical_memory
+    expr: max(lightbox_clustering_snapshot_physical_memory) by (project_name, snapshot_id, snapshot_name, src_volume_uuid, job)
+  - record: instance:snapshot:physical_owned_memory
+    expr: max(lightbox_clustering_snapshot_physical_owned_memory) by (project_name, snapshot_id, snapshot_name, src_volume_uuid, job)
+
+  # replication related metrics
+  - record: instance:volume:total_replications_write_bytes_tx_per_volume
+    expr: sum(lightbox_fe_volume_replicator_write_bandwidth_tx) by (instance, node_id, volume_id, volume_name, nsid, job)
+  - record: instance:volume:total_replications_write_bytes_rx_per_volume
+    expr: sum(lightbox_fe_volume_replicator_write_bandwidth_rx) by (instance, node_id, volume_id, volume_name, nsid, job)
+  - record: instance:volume:replications_write_throughput_tx_per_volume
+    expr: sum(irate(lightbox_fe_volume_replicator_write_bandwidth_tx[1m])) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:replications_write_throughput_rx_per_volume
+    expr: sum(irate(lightbox_fe_volume_replicator_write_bandwidth_rx[1m])) by (project_name, volume_id, volume_name, nsid, job)
+  - record: instance:volume:total_replications_writes_tx_per_volume
+    expr: sum(lightbox_fe_n_volume_replicator_write_requests_tx) by (instance, node_id, volume_id, volume_name, nsid, job)
+  - record: instance:volume:total_replications_writes_rx_per_volume
+    expr: sum(lightbox_fe_n_volume_replicator_write_requests_rx) by (instance, node_id, volume_id, volume_name, nsid, job)
+  - record: instance:volume:replication_write_iops_tx_per_volume
+    expr: sum(irate(lightbox_fe_n_volume_replicator_write_requests_tx[1m])) by (instance, node_id, volume_id, volume_name, nsid, job)
+  - record: instance:volume:replication_write_iops_rx_per_volume
+    expr: sum(irate(lightbox_fe_n_volume_replicator_write_requests_rx[1m])) by (instance, node_id, volume_id, volume_name, nsid, job)
+
+
+- name: node.rules
+  interval: 10s   # defaults to global interval
+  rules:
+  - record: instance:node:nr_read_requests_0_1K
+    expr: sum(lightbox_fe_nr_read_requests_0_1K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_bytes_0_1K
+    expr: sum(lightbox_fe_nr_read_bytes_0_1K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_0_1K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_0_1K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_0_1K_count[1m]))
+  - record: instance:node:nr_read_requests_1K_8K
+    expr: sum(lightbox_fe_nr_read_requests_1K_8K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_bytes_1K_8K
+    expr: sum(lightbox_fe_nr_read_bytes_1K_8K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_1K_8K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_1K_8K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_1K_8K_count[1m]))
+  - record: instance:node:nr_read_requests_8K_32K
+    expr: sum(lightbox_fe_nr_read_requests_8K_32K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_bytes_8K_32K
+    expr: sum(lightbox_fe_nr_read_bytes_8K_32K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_8K_32K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_8K_32K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_8K_32K_count[1m]))
+  - record: instance:node:nr_read_requests_32K_128K
+    expr: sum(lightbox_fe_nr_read_requests_32K_128K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_bytes_32K_128K
+    expr: sum(lightbox_fe_nr_read_bytes_32K_128K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_32K_128K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_32K_128K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_32K_128K_count[1m]))
+  - record: instance:node:nr_write_requests_0_1K
+    expr: sum(lightbox_fe_nr_write_requests_0_1K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_bytes_0_1K
+    expr: sum(lightbox_fe_nr_write_bytes_0_1K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_0_1K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_0_1K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_0_1K_count[1m]))
+  - record: instance:node:nr_write_requests_1K_8K
+    expr: sum(lightbox_fe_nr_write_requests_1K_8K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_bytes_1K_8K
+    expr: sum(lightbox_fe_nr_write_bytes_1K_8K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_1K_8K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_1K_8K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_1K_8K_count[1m]))
+  - record: instance:node:nr_write_requests_8K_32K
+    expr: sum(lightbox_fe_nr_write_requests_8K_32K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_bytes_8K_32K
+    expr: sum(lightbox_fe_nr_write_bytes_8K_32K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_8K_32K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_8K_32K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_8K_32K_count[1m]))
+  - record: instance:node:nr_write_requests_32K_128K
+    expr: sum(lightbox_fe_nr_write_requests_32K_128K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_bytes_32K_128K
+    expr: sum(lightbox_fe_nr_write_bytes_32K_128K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_32K_128K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_32K_128K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_32K_128K_count[1m]))
+  - record: instance:node:memory_cross_cpu_frees
+    expr: avg(lightbox_fe_seastar_memory_cross_cpu_frees) by (instance, server_id, node_id, job)
+  - record: instance:node:memory_large_allocations
+    expr: avg(lightbox_fe_seastar_memory_large_allocations) by (instance, server_id, node_id, job)
+  - record: instance:node:memory_allocated_memory
+    expr: avg(lightbox_fe_seastar_memory_allocated_memory) by (instance, server_id, node_id, job)
+  - record: instance:node:memory_total_memory
+    expr: avg(lightbox_fe_seastar_memory_total_memory) by (instance, server_id, node_id, job)
+  - record: instance:node:current_load_min
+    expr: min(lightbox_fe_seastar_current_load) by (instance, server_id, node_id, job)
+  - record: instance:node:current_load_max
+    expr: max(lightbox_fe_seastar_current_load) by (instance, server_id, node_id, job)
+  - record: instance:node:current_load_avg
+    expr: avg(lightbox_fe_seastar_current_load) by (instance, server_id, node_id, job)
+  - record: instance:node:write_amplification
+    expr: lightbox_be_write_units_end / (lightbox_be_write_units_end - lightbox_be_num_of_gc_units)
+  - record: instance:node:write_amplification_delta10m
+    expr: delta(lightbox_be_write_units_end[10m]) / (delta(lightbox_be_write_units_end[10m]) - delta(lightbox_be_num_of_gc_units[10m]))
+  - record: instance:node_rebuild_time_to_complete_seconds:left_percentage_divided_by_rebuild_progress_rate10m
+    expr: (100 - lightbox_clustering_node_local_rebuild_progress) / rate(lightbox_clustering_node_local_rebuild_progress[10m]) and lightbox_clustering_node_local_rebuild_progress > 0 and lightbox_clustering_node_local_rebuild_progress < 100
+  - record: instance:node:be_core_utilization
+    expr: 100.0 * ((irate(lightbox_be_busy_cycles[1m]) / (irate(lightbox_be_busy_cycles[1m]) + irate(lightbox_be_idle_cycles[1m]))))
+  - record: instance:node:total_reads
+    expr: sum by (instance, server_id, node_id, job) (lightbox_fe_nr_read_requests_0_1K + lightbox_fe_nr_read_requests_1K_8K + lightbox_fe_nr_read_requests_8K_32K + lightbox_fe_nr_read_requests_32K_128K)
+  - record: instance:node:total_writes
+    expr: sum by (instance, server_id, node_id, job) (lightbox_fe_nr_write_requests_0_1K + lightbox_fe_nr_write_requests_1K_8K + lightbox_fe_nr_write_requests_8K_32K + lightbox_fe_nr_write_requests_32K_128K)
+  - record: instance:node:total_replications_writes_tx
+    expr: sum(lightbox_fe_n_replicator_write_requests_tx) by (instance, server_id, node_id, job)
+  - record: instance:node:total_replications_writes_rx
+    expr: sum(lightbox_fe_n_replicator_write_requests_rx) by (instance, server_id, node_id, job)
+  - record: instance:node:read_iops
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_read_requests_0_1K[1m]) + rate(lightbox_fe_nr_read_requests_1K_8K[1m]) + rate(lightbox_fe_nr_read_requests_8K_32K[1m]) + rate(lightbox_fe_nr_read_requests_32K_128K[1m]))
+  - record: instance:node:write_iops
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_write_requests_0_1K[1m]) + rate(lightbox_fe_nr_write_requests_1K_8K[1m]) + rate(lightbox_fe_nr_write_requests_8K_32K[1m]) + rate(lightbox_fe_nr_write_requests_32K_128K[1m]))
+  - record: instance:node:replication_write_iops_tx
+    expr: sum(irate(lightbox_fe_n_replicator_write_requests_tx[1m])) by (instance, server_id, node_id, job)
+  - record: instance:node:replication_write_iops_rx
+    expr: sum(irate(lightbox_fe_n_replicator_write_requests_rx[1m])) by (instance, server_id, node_id, job)
+  - record: instance:node:total_read_bytes
+    expr: sum by (instance, server_id, node_id, job) (lightbox_fe_nr_read_bytes_0_1K + lightbox_fe_nr_read_bytes_1K_8K + lightbox_fe_nr_read_bytes_8K_32K + lightbox_fe_nr_read_bytes_32K_128K)
+  - record: instance:node:total_write_bytes
+    expr: sum by (instance, server_id, node_id, job) (lightbox_fe_nr_write_bytes_0_1K + lightbox_fe_nr_write_bytes_1K_8K + lightbox_fe_nr_write_bytes_8K_32K + lightbox_fe_nr_write_bytes_32K_128K)
+  - record: instance:node:total_replications_write_bytes_tx
+    expr: sum(lightbox_fe_replicator_write_bandwidth_tx) by (instance, server_id, node_id, job)
+  - record: instance:node:total_replications_write_bytes_rx
+    expr: sum(lightbox_fe_replicator_write_bandwidth_rx) by (instance, server_id, node_id, job)
+  - record: instance:node:read_throughput
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_read_bytes_0_1K[1m]) + rate(lightbox_fe_nr_read_bytes_1K_8K[1m]) + rate(lightbox_fe_nr_read_bytes_8K_32K[1m]) + rate(lightbox_fe_nr_read_bytes_32K_128K[1m]))
+  - record: instance:node:write_throughput
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_write_bytes_0_1K[1m]) + rate(lightbox_fe_nr_write_bytes_1K_8K[1m]) + rate(lightbox_fe_nr_write_bytes_8K_32K[1m]) + rate(lightbox_fe_nr_write_bytes_32K_128K[1m]))
+  - record: instance:node:replications_write_throughput_tx
+    expr: sum(irate(lightbox_fe_replicator_write_bandwidth_tx[1m])) by (instance, server_id, node_id, job)
+  - record: instance:node:replications_write_throughput_rx
+    expr: sum(irate(lightbox_fe_replicator_write_bandwidth_rx[1m])) by (instance, server_id, node_id, job)
+  - record: instance:node:managed_physical_storage
+    expr: max(lightbox_clustering_node_managed_physical_storage) by (server_id, node_id, node_name, job)
+  - record: instance:node:logical_used_storage
+    expr: max(lightbox_clustering_node_logical_used_storage) by (server_id, node_id, node_name, job)
+  - record: instance:node:estimated_logical_storage
+    expr: min(lightbox_clustering_node_estimated_logical_storage) by (server_id, node_id, job)
+  - record: instance:node:estimated_free_logical_storage
+    expr: min(lightbox_clustering_node_estimated_free_logical_storage) by (server_id, node_id, node_name, job)
+  - record: instance:node:free_physical_storage
+    expr: min(lightbox_clustering_node_free_physical_storage) by (server_id, node_id, node_name, job)
+  - record: instance:node:physical_used_storage
+    expr: max(lightbox_clustering_node_physical_used_storage) by (server_id, node_id, node_name, job)
+  - record: instance:node:physical_used_storage_including_parity
+    expr: max(lightbox_clustering_node_physical_used_storage_including_parity) by (server_id, node_id, node_name, job)
+  - record: instance:node:effective_physical_storage
+    expr: max(lightbox_clustering_node_effective_physical_storage) by (server_id, node_id, node_name, job)
+  - record: instance:node:logical_storage
+    expr: max(lightbox_clustering_node_logical_storage) by (server_id, node_id, node_name, job)
+  - record: instance:node:avg_read_size
+    expr: delta(instance:node:total_read_bytes[1m]) / delta(instance:node:total_reads[1m])
+  - record: instance:node:compression_ratio
+    expr: clamp_max(clamp_min(instance:node:physical_used_storage, 1) /  clamp_min(instance:node:logical_used_storage, 1) , 1)
+  - record: instance:node:avg_write_size
+    expr: delta(instance:node:total_write_bytes[1m]) / delta(instance:node:total_writes[1m])
+
+  - record: instance:node:node_state_inactive
+    expr: max(lightbox_clustering_node_state_inactive) by (node_id, job)
+  - record: instance:node:node_state_active
+    expr: max(lightbox_clustering_node_state_active) by (node_id, job) * (1-instance:node:node_state_inactive)
+
+  - record: instance:node:receive_bytes_total
+    expr: irate(lightbox_network_receive_bytes_total[1m]) or irate(lightbox_netdev_receive_bytes_total[1m])
+  - record: instance:node:receive_packets_total
+    expr: irate(lightbox_network_receive_packets_total[1m]) or irate(lightbox_netdev_receive_packets_total[1m])
+  - record: instance:node:receive_drop_total
+    expr: irate(lightbox_network_receive_drop_total[1m]) or irate(lightbox_netdev_receive_drop_total[1m])
+  - record: instance:node:receive_errs_total
+    expr: irate(lightbox_network_receive_errs_total[1m]) or irate(lightbox_netdev_receive_errs_total[1m])
+  - record: instance:node:transmit_bytes_total
+    expr: irate(lightbox_network_transmit_bytes_total[1m]) or irate(lightbox_netdev_transmit_bytes_total[1m])
+  - record: instance:node:transmit_packets_total
+    expr: irate(lightbox_network_transmit_packets_total[1m]) or irate(lightbox_netdev_transmit_packets_total[1m])
+  
+- name: cluster.rules
+  interval: 10s   # defaults to global interval
+  rules:
+  - record: instance:cluster:node_state_inactive
+    expr: max(lightbox_clustering_node_state_inactive) by (job)
+  - record: instance:cluster:node_state_active
+    expr: max(lightbox_clustering_node_state_active) by (job) * (1-instance:cluster:node_state_inactive)
+  - record: instance:cluster:compression_ratio
+    expr: clamp_max(clamp_min(sum(instance:node:physical_used_storage) by (job), 1) / clamp_min(sum(instance:node:logical_used_storage) by (job), 1), 1)
+  - record: instance:cluster:managed_physical_storage
+    expr: sum(instance:node:managed_physical_storage) by (job)
+  - record: instance:cluster:logical_used_storage
+    expr: sum(instance:node:logical_used_storage) by (job)
+  - record: instance:cluster:estimated_logical_storage
+    expr: sum(instance:node:estimated_logical_storage) by (job)
+  - record: instance:cluster:estimated_free_logical_storage
+    expr: sum(instance:node:estimated_free_logical_storage) by (job)
+  - record: instance:cluster:free_physical_storage
+    expr: sum(instance:node:free_physical_storage) by (job)
+  - record: instance:cluster:physical_used_storage
+    expr: sum(instance:node:physical_used_storage) by (job)
+  - record: instance:cluster:physical_used_storage_including_parity
+    expr: sum(instance:node:physical_used_storage_including_parity) by (job)
+  - record: instance:cluster:effective_physical_storage
+    expr: sum(instance:node:effective_physical_storage) by (job)
+  - record: instance:cluster:logical_storage
+    expr: sum(instance:node:logical_storage) by (job)
+
+  - record: instance:cluster:total_reads
+    expr: sum(lightbox_fe_nr_read_requests_0_1K) by (job) + sum(lightbox_fe_nr_read_requests_1K_8K) by (job) + sum(lightbox_fe_nr_read_requests_8K_32K) by (job) + sum(lightbox_fe_nr_read_requests_32K_128K) by (job)
+  - record: instance:cluster:total_writes
+    expr: sum(lightbox_fe_nr_write_requests_0_1K) by (job) + sum(lightbox_fe_nr_write_requests_1K_8K) by (job) + sum(lightbox_fe_nr_write_requests_8K_32K) by (job) + sum(lightbox_fe_nr_write_requests_32K_128K) by (job)
+  - record: instance:cluster:read_iops
+    expr: sum(rate(lightbox_fe_nr_read_requests_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_requests_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_requests_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_requests_32K_128K[1m])) by (job)
+  - record: instance:cluster:write_iops
+    expr: sum(rate(lightbox_fe_nr_write_requests_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_requests_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_requests_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_requests_32K_128K[1m])) by (job)
+  - record: instance:cluster:total_read_bytes
+    expr: sum(lightbox_fe_nr_read_bytes_0_1K) by (job) + sum(lightbox_fe_nr_read_bytes_1K_8K) by (job) + sum(lightbox_fe_nr_read_bytes_8K_32K) by (job) + sum(lightbox_fe_nr_read_bytes_32K_128K) by (job)
+  - record: instance:cluster:total_write_bytes
+    expr: sum(lightbox_fe_nr_write_bytes_0_1K) by (job) + sum(lightbox_fe_nr_write_bytes_1K_8K) by (job) + sum(lightbox_fe_nr_write_bytes_8K_32K) by (job) + sum(lightbox_fe_nr_write_bytes_32K_128K) by (job)
+  - record: instance:cluster:read_throughput
+    expr: sum(rate(lightbox_fe_nr_read_bytes_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_bytes_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_bytes_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_bytes_32K_128K[1m])) by (job)
+  - record: instance:cluster:write_throughput
+    expr: sum(rate(lightbox_fe_nr_write_bytes_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_bytes_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_bytes_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_bytes_32K_128K[1m])) by (job)
+
+  - record: instance:cluster:number_of_nodes
+    expr: sum(instance:node:node_state_inactive) by (job) + sum(instance:node:node_state_active) by (job)
+  - record: instance:cluster:number_of_inactive_nodes
+    expr: sum(instance:node:node_state_inactive) by (job)
+  - record: instance:cluster:number_of_active_nodes
+    expr: sum(instance:node:node_state_active) by (job)
+  - record: instance:cluster:number_of_volumes
+    expr: sum(instance:volume:volume_state_fully_protected + instance:volume:volume_state_degraded + instance:volume:volume_state_read_only + instance:volume:volume_state_not_available) by (job)
+  - record: instance:cluster:number_of_degraded_volumes
+    expr: sum(instance:volume:volume_state_degraded) by (job)
+  - record: instance:cluster:number_of_read_only_volumes
+    expr: sum(instance:volume:volume_state_read_only) by (job)
+  - record: instance:cluster:number_of_not_available_volumes
+    expr: sum(instance:volume:volume_state_not_available) by (job)
+
+  - record: instance:cluster:health_error
+    expr: instance:cluster:number_of_read_only_volumes + instance:cluster:number_of_not_available_volumes > bool 0
+  - record: instance:cluster:health_warning
+    expr: (instance:cluster:number_of_degraded_volumes + instance:cluster:node_state_inactive) * (1-instance:cluster:health_error)
+  - record: instance:cluster:health_ok
+    expr: (1-instance:cluster:health_error) * (1-instance:cluster:health_warning)

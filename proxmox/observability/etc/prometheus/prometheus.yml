@@ -1,0 +1,133 @@
+# my global config
+global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 15s # By default, scrape targets every 15 seconds.
+  scrape_timeout: 10s
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'lightos-duros'
+
+# Load and evaluate rules in this file every 'evaluation_interval' seconds.
+rule_files:
+- "alert.rules.yaml"
+- "etcd3_alert_rules.yml"
+- "record.rules.yaml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+- job_name: lightos
+  scheme: http
+  scrape_timeout: 13s
+  scrape_interval: 15s
+  metrics_path: /metrics
+  honor_timestamps: True
+  params:
+    collect[]:
+    - clustering
+    - datapath
+    - duroslight
+    - meminfo
+    - textfile
+    - lightfield
+    - netstat
+    - netdev
+    - cpufreq
+  file_sd_configs:
+  - refresh_interval: 10s
+    files:
+    - '/targets/lightbox-exporter/*.yaml'
+
+- job_name: lightos-smart
+  scheme: http
+  scrape_timeout: 10s
+  scrape_interval: 5m
+  metrics_path: /metrics
+  honor_timestamps: True
+  params:
+    collect[]:
+    - smart
+  file_sd_configs:
+  - refresh_interval: 10s
+    files:
+    - '/targets/lightbox-exporter/*.yaml'
+
+- job_name: api-service
+  scheme: https
+  tls_config:
+    insecure_skip_verify: true
+  scrape_timeout: 13s
+  scrape_interval: 15s
+  metrics_path: /metrics
+  honor_timestamps: True
+  file_sd_configs:
+  - refresh_interval: 10s
+    files:
+    - '/targets/api-service/*.yaml'
+
+- job_name: discovery-service
+  scheme: http
+  scrape_timeout: 10s
+  scrape_interval: 15s
+  metrics_path: /probe
+  params:
+    service:
+    - discovery-service
+  honor_timestamps: True
+  file_sd_configs:
+  - refresh_interval: 10s
+    files:
+    - '/targets/lightbox-exporter/*.yaml'
+
+- job_name: etcd
+  scheme: http
+  scrape_timeout: 13s
+  scrape_interval: 15s
+  metrics_path: /probe
+  params:
+    service:
+    - etcd
+  honor_timestamps: True
+  file_sd_configs:
+  - refresh_interval: 10s
+    files:
+    - '/targets/lightbox-exporter/*.yaml'
+
+- job_name: node-manager
+  scheme: http
+  scrape_timeout: 13s
+  scrape_interval: 15s
+  metrics_path: /probe
+  params:
+    service:
+    - node-manager
+  honor_timestamps: True
+  file_sd_configs:
+  - refresh_interval: 10s
+    files:
+    - '/targets/lightbox-exporter/*.yaml'
+
+- job_name: cluster-manager
+  scheme: http
+  scrape_timeout: 13s
+  scrape_interval: 15s
+  metrics_path: /probe
+  params:
+    service:
+    - cluster-manager
+  honor_timestamps: True
+  file_sd_configs:
+  - refresh_interval: 10s
+    files:
+    - '/targets/lightbox-exporter/*.yaml'
+
+alerting:
+  alertmanagers:
+  - api_version: v1
+    scheme: http
+    timeout: 10s
+    static_configs:
+    - targets:
+      - "alertmanager:9093"

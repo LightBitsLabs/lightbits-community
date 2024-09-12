@@ -3,14 +3,14 @@ boxes:
 - name: node00
   hostname: node00
   description: duros node
-  box: generic/centos7
+  box: boxen/rockylinux-9
   cpus: 9
   cputopology:
     sockets: '9'
     cores: '1'
     threads: '1'
   cpu_execution_cap: 75
-  ram: 8000
+  ram: 12000
   ssh_port: 2201
   public_networks:
   - dev: "br1"
@@ -39,10 +39,10 @@ boxes:
 - name: node01
   hostname: node01
   description: duros node
-  box: generic/centos7
+  box: boxen/rockylinux-9
   cpus: 9
   cpu_execution_cap: 75
-  ram: 8000
+  ram: 12000
   ssh_port: 2202
   public_networks:
   - dev: "br1"
@@ -71,10 +71,10 @@ boxes:
 - name: node02
   hostname: node02
   description: duros node
-  box: generic/centos7
+  box: boxen/rockylinux-9
   cpus: 9
   cpu_execution_cap: 75
-  ram: 8000
+  ram: 12000
   ssh_port: 2203
   public_networks:
   - dev: "br1"
@@ -103,10 +103,10 @@ boxes:
 - name: node03
   hostname: node03
   description: duros node
-  box: generic/centos7
+  box: boxen/rockylinux-9
   cpus: 9
   cpu_execution_cap: 75
-  ram: 8000
+  ram: 12000
   ssh_port: 2203
   public_networks:
   - dev: "br1"
@@ -135,7 +135,7 @@ boxes:
 - name: client0
   hostname: client0
   description: nvme client
-  box: generic/fedora36
+  box: boxen/rockylinux-9
   cpus: 3
   cpu_execution_cap: 75
   ram: 2048

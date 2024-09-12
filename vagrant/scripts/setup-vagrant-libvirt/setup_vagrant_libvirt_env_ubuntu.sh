@@ -41,6 +41,20 @@ vagrant plugin install \
                vagrant-hostmanager \
                vagrant-reload
 
+# modify qemu permission to enable image creation under $USER
+sudo sed -i 's/#user = "root"/user = '\""$USER"\"'/g' /etc/libvirt/qemu.conf
+sudo sed -i 's/#group = "root"/group = '\""$USER"\"'/g' /etc/libvirt/qemu.conf
+
+# note that we set the user/group and mask permissions
+sudo setfacl -m u:$USER:rwx /var/lib/libvirt/images
+sudo setfacl -m g:$USER:rwx /var/lib/libvirt/images
+sudo setfacl -m m::rwx /var/lib/libvirt/images
+
+sudo gpasswd -a ${USER} libvirt
+
+sudo systemctl enable --now libvirtd
+sudo systemctl restart libvirtd
+
 # enable Apparmor creating nvme emulated drives
 sudo apt-get install -y apparmor-profiles
 echo '/var/lib/libvirt/images/*.img rwk,' | sudo tee -a /etc/apparmor.d/abstractions/libvirt-qemu

@@ -1,0 +1,91 @@
+groups:
+- name: volume.rules
+  interval: 1m   # defaults to global interval
+  rules:
+  - record: instance:volume:volume_write_request_duration_0K_1K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_0_1K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_0K_1K_count[1m]))
+  - record: instance:volume:volume_write_request_duration_1K_8K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_1K_8K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_1K_8K_count[1m]))
+  - record: instance:volume:volume_write_request_duration_8K_32K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_8K_32K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_8K_32K_count[1m]))
+  - record: instance:volume:volume_write_request_duration_32K_128K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_32K_128K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_write_request_duration_32K_128K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_0K_1K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_0_1K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_0K_1K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_1K_8K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_1K_8K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_1K_8K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_8K_32K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_8K_32K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_8K_32K_count[1m]))
+  - record: instance:volume:volume_read_request_duration_32K_128K
+    expr: avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_32K_128K_sum[1m])) / avg by (project_name, volume_id, volume_name, nsid, job) (delta(lightbox_fe_volume_read_request_duration_32K_128K_count[1m]))
+
+  - record: instance:volume:read_iops_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) ((rate(lightbox_fe_volume_read_requests_0_1K[1m])) + (rate(lightbox_fe_volume_read_requests_1K_8K[1m])) +  (rate(lightbox_fe_volume_read_requests_8K_32K[1m])) + (rate(lightbox_fe_volume_read_requests_32K_128K[1m])))
+  - record: instance:volume:write_iops_per_volume
+    expr: sum by (project_name, volume_id, volume_name, nsid, job) ((rate(lightbox_fe_volume_write_requests_0_1K[1m])) + (rate(lightbox_fe_volume_write_requests_1K_8K[1m])) +  (rate(lightbox_fe_volume_write_requests_8K_32K[1m])) + (rate(lightbox_fe_volume_write_requests_32K_128K[1m])))
+
+  - record: instance:volume:read_throughput_per_volume
+    expr: sum by(project_name, volume_id, volume_name, nsid, job) (rate(lightbox_fe_volume_read_total_0_1K[1m]) + rate(lightbox_fe_volume_read_total_1K_8K[1m]) + rate(lightbox_fe_volume_read_total_8K_32K[1m]) +  rate(lightbox_fe_volume_read_total_32K_128K[1m]))
+  - record: instance:volume:write_throughput_per_volume
+    expr: sum by(project_name, volume_id, volume_name, nsid, job) (rate(lightbox_fe_volume_write_total_0_1K[1m]) + rate(lightbox_fe_volume_write_total_1K_8K[1m]) + rate(lightbox_fe_volume_write_total_8K_32K[1m]) +  rate(lightbox_fe_volume_write_total_32K_128K[1m]))
+
+- name: node.rules
+  interval: 1m   # defaults to global interval
+  rules:
+  - record: instance:node:nr_read_requests_0_1K
+    expr: sum(lightbox_fe_nr_read_requests_0_1K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_0_1K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_0_1K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_0_1K_count[1m]))
+  - record: instance:node:nr_read_requests_1K_8K
+    expr: sum(lightbox_fe_nr_read_requests_1K_8K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_1K_8K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_1K_8K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_1K_8K_count[1m]))
+  - record: instance:node:nr_read_requests_8K_32K
+    expr: sum(lightbox_fe_nr_read_requests_8K_32K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_8K_32K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_8K_32K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_8K_32K_count[1m]))
+  - record: instance:node:nr_read_requests_32K_128K
+    expr: sum(lightbox_fe_nr_read_requests_32K_128K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_read_request_duration_32K_128K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_32K_128K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_read_request_duration_32K_128K_count[1m]))
+  - record: instance:node:nr_write_requests_0_1K
+    expr: sum(lightbox_fe_nr_write_requests_0_1K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_0_1K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_0_1K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_0_1K_count[1m]))
+  - record: instance:node:nr_write_requests_1K_8K
+    expr: sum(lightbox_fe_nr_write_requests_1K_8K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_1K_8K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_1K_8K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_1K_8K_count[1m]))
+  - record: instance:node:nr_write_requests_8K_32K
+    expr: sum(lightbox_fe_nr_write_requests_8K_32K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_8K_32K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_8K_32K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_8K_32K_count[1m]))
+  - record: instance:node:nr_write_requests_32K_128K
+    expr: sum(lightbox_fe_nr_write_requests_32K_128K) by (instance, server_id, node_id, job)
+  - record: instance:node:nr_write_request_duration_32K_128K
+    expr: avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_32K_128K_sum[1m])) / avg by(instance, server_id, node_id, job) (delta(lightbox_fe_write_request_duration_32K_128K_count[1m]))
+
+  - record: instance:node:read_iops
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_read_requests_0_1K[1m]) + rate(lightbox_fe_nr_read_requests_1K_8K[1m]) + rate(lightbox_fe_nr_read_requests_8K_32K[1m]) + rate(lightbox_fe_nr_read_requests_32K_128K[1m]))
+  - record: instance:node:write_iops
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_write_requests_0_1K[1m]) + rate(lightbox_fe_nr_write_requests_1K_8K[1m]) + rate(lightbox_fe_nr_write_requests_8K_32K[1m]) + rate(lightbox_fe_nr_write_requests_32K_128K[1m]))
+
+  - record: instance:node:read_throughput
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_read_bytes_0_1K[1m]) + rate(lightbox_fe_nr_read_bytes_1K_8K[1m]) + rate(lightbox_fe_nr_read_bytes_8K_32K[1m]) + rate(lightbox_fe_nr_read_bytes_32K_128K[1m]))
+  - record: instance:node:write_throughput
+    expr: sum by (instance, server_id, node_id, job) (rate(lightbox_fe_nr_write_bytes_0_1K[1m]) + rate(lightbox_fe_nr_write_bytes_1K_8K[1m]) + rate(lightbox_fe_nr_write_bytes_8K_32K[1m]) + rate(lightbox_fe_nr_write_bytes_32K_128K[1m]))
+
+  
+- name: cluster.rules
+  interval: 1m   # defaults to global interval
+  rules:
+  - record: instance:cluster:read_iops
+    expr: sum(rate(lightbox_fe_nr_read_requests_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_requests_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_requests_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_requests_32K_128K[1m])) by (job)
+  - record: instance:cluster:write_iops
+    expr: sum(rate(lightbox_fe_nr_write_requests_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_requests_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_requests_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_requests_32K_128K[1m])) by (job)
+
+  - record: instance:cluster:read_throughput
+    expr: sum(rate(lightbox_fe_nr_read_bytes_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_bytes_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_bytes_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_read_bytes_32K_128K[1m])) by (job)
+  - record: instance:cluster:write_throughput
+    expr: sum(rate(lightbox_fe_nr_write_bytes_0_1K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_bytes_1K_8K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_bytes_8K_32K[1m])) by (job) + sum(rate(lightbox_fe_nr_write_bytes_32K_128K[1m])) by (job)
+

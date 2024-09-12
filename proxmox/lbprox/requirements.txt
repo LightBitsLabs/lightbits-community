@@ -1,0 +1,8 @@
+click
+jinja2
+proxmoxer
+prettytable
+requests
+PyYAML
+ipdb
+paramiko

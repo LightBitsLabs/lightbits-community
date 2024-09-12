@@ -1,0 +1,6 @@
+name: observability
+description: "all in 1 observability VM"
+machines:
+- name: observability
+  machine_type: observability-small
+  role: observability
