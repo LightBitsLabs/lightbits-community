@@ -1,9 +1,0 @@
-# Observibility
-
-## Monitoring
-
-
-
-## Logging
-
-TBD...

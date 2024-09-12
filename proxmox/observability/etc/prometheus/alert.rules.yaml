@@ -1,0 +1,142 @@
+groups:
+- name: node.rules
+  rules:
+  - alert: SsdWasReset
+    expr: changes(lightbox_be_num_resets[1m]) > 0
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` an SSD was reset.
+  - alert: SsdReadError
+    expr: changes(lightbox_be_read_errors[1m]) > 0
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` An SSD read error occurred.
+  - alert: SsdWriteError
+    expr: changes(lightbox_be_write_errors[1m]) > 0
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` An SSD write error occurred.
+  - alert: SsdUnrecoverableDataIntegrityErrors
+    expr: changes(lightbox_clustering_ssd_unrecoverable_data_integrity_errors[1m]) > 0
+    for: 0s
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` SSD `{{$labels.serial_number}}` unrecoverable data integrity error occurred.
+  - alert: NodeUnrecoverableDataIntegrityErrors
+    expr: changes(lightbox_clustering_node_unrecoverable_data_integrity_errors[1m]) > 0
+    for: 0s
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` unrecoverable data integrity error occurred.
+  - alert: SsdAddedSuccessfully
+    expr: changes(lightbox_be_add_disk_success[1m]) > 0
+    labels:
+      severity: info
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` An SSD was successfully added.
+  - alert: SsdAddFailure
+    expr: changes(lightbox_be_add_disk_failure[1m]) > 0
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` An SSD was failed to be added.
+  - alert: SsdFailure
+    expr: changes(lightbox_be_num_disk_failures[1m]) > 0
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` An SSD failure occurred
+  - alert: NodeSystemAlmostCrossingMetaDataLimit
+    expr: lightbox_be_config_md_ram_capacity_used > 0.9 * lightbox_be_config_md_ram_capacity_limit
+    for: 1s
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` Shard `{{$labels.shard}}` is about to cross meta data overprovision limitation and enter a read only mode
+  - alert: NodeCapacityWillFillIn1Hours
+    expr: predict_linear(lightbox_clustering_node_free_physical_storage[15m], 1 * 60 * 60) < 0 and lightbox_clustering_node_physical_used_storage > 0.8 * lightbox_clustering_node_effective_physical_storage
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` Capacity is predicted to get full in a hour.
+  - alert: NodeCapacityGettingFull
+    expr: lightbox_clustering_node_physical_used_storage > 0.95 * lightbox_clustering_node_effective_physical_storage
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` Capacity is nearing degraded performance state. A further 5% increase in capacity will lead to compromised permormance.
+  - alert: RebuildInProgress
+    expr: lightbox_clustering_node_local_rebuild_progress > 0
+    for: 1s
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` started rebuild process on device `{{$labels.device_name}}`.
+  - alert: NodePowerUpAfterAbruptShutdown
+    expr: lightbox_clustering_node_power_up_after_abrupt_shutdown == 1
+    for: 1s
+    labels:
+      severity: info
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` is powering up after an abrupt shutdown.
+  - alert: NodeReadOnlyMode
+    expr: lightbox_clustering_node_read_only_mode == 1
+    for: 1s
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` entered read only.
+  - alert: NodeRebuildNotPossible
+    expr: max(lightbox_clustering_node_physical_used_storage) by (node_id, job, server_id) > max(lightbox_clustering_node_managed_physical_storage) by (node_id, job, server_id) * max((lightbox_clustering_node_num_managed_devices - 2) / lightbox_clustering_node_num_managed_devices) by (node_id, job, server_id)
+    for: 1s
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` rebuild is not possible after {{ query "lightbox_clustering_node_num_of_failed_ssds" }} SSDs failed.
+  - alert: NodeAlmostReadOnlyMode
+    expr: lightbox_clustering_node_physical_used_storage > 0.95 * lightbox_clustering_node_effective_physical_storage and lightbox_clustering_node_physical_used_storage < lightbox_clustering_node_effective_physical_storage
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` System is approaching read only mode.
+  - alert: NodePerformanceDegraded
+    expr: lightbox_clustering_node_physical_used_storage > 0.7/0.85 * lightbox_clustering_node_effective_physical_storage
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` Node `{{$labels.node_id}}` performance degraded due to storage over-utilization.
+
+- name: clustering.rules
+  rules:
+  - alert: NodeBecameActive
+    expr: instance:node:node_state_active == 1 and changes(instance:node:node_state_active[1m]) > 0
+    for: 0
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` A Node became active
+  - alert: NodeBecameInactive
+    expr: instance:node:node_state_inactive == 1 and changes(instance:node:node_state_inactive[1m]) > 0
+    for: 0
+    labels:
+      severity: warning
+    annotations:
+      description: Instance `{{$labels.instance}}` A Node became inactive
+- name: server.rules
+  rules:
+  - alert: MetricsServiceDown
+    expr:  up{instance=~".*:8090"} == 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: Lightbox exporter running over instance `{{$labels.instance}}` is down.
