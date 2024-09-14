@@ -36,8 +36,19 @@ fi
 # on alpine ping group is coliding with docker-group on id 999 - delete it if exists
 getent group ping >/dev/null && delgroup ping > /dev/null
 # add docker group and add user to docker group
-addgroup -g $DOCKER_GID docker
-addgroup $UNAME docker
+
+# add docker group if not exists, add user to the group
+GR=$(getent group $DOCKER_GID | cut -d: -f1)
+if [ -z "$GR" ]; then
+    addgroup -g $DOCKER_GID docker
+    addgroup $UNAME docker
+else
+    addgroup $UNAME $GR
+fi
+
+
+#addgroup -g $DOCKER_GID docker
+#addgroup $UNAME docker
 
 export PATH=$PATH:$HOME/.local/bin
 

@@ -10,6 +10,8 @@ RUN apk update && \
         sudo \
 	docker-cli docker-cli-compose \
         su-exec \
+	vim \
+        curl \
         bash-completion && \
     # Install virtualenv
     python3 -m venv ./venv && \
