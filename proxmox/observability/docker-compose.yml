@@ -48,6 +48,7 @@ services:
   loki:
     image: grafana/loki:3.1.1
     container_name: loki
+    restart: unless-stopped
     ports:
     - "3100:3100"
     volumes:
@@ -70,11 +71,12 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    restart: unless-stopped
     ports:
     - "3000:3000"
     environment:
-      UID: 1000
-      GID: 1000
+      UID: ${UID}
+      GID: ${GID}
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
       GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION: "true"
       GF_AUTH_ANONYMOUS_ENABLED: "true"
@@ -92,3 +94,39 @@ services:
     networks:
     - monitoring
 
+  lbprox-dashboard:
+    image: ${LBPROX_IMG}
+    container_name: lbprox-dashboard
+    restart: unless-stopped
+    environment:
+      UID: ${UID}
+      GID: ${GID}
+      UNAME: ${UNAME}
+      DOCKER_GID: ${DOCKER_GID}
+    ports:
+    - "9000:9000"
+    expose:
+    - 9000
+    networks:
+    - monitoring
+    volumes:
+    - ${HOME}/.local/lbprox:${HOME}/.local/lbprox
+    command: lbprox dashboard serve --observability-hostname 192.168.19.226
+
+  lbprox-prom-discovery:
+    image: ${LBPROX_IMG}
+    container_name: lbprox-prom-discovery
+    restart: unless-stopped
+    depends_on:
+    - prometheus
+    environment:
+      UID: ${UID}
+      GID: ${GID}
+      UNAME: ${UNAME}
+      DOCKER_GID: ${DOCKER_GID}
+    networks:
+    - monitoring
+    volumes:
+    - ${HOME}/.local/lbprox:${HOME}/.local/lbprox
+    - ./etc/prometheus/targets:/targets
+    command: lbprox prom-discovery serve --interval 60 -t /targets

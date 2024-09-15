@@ -325,3 +325,92 @@ def delete_emulated_ssds(pve, hostname, vmid, storage_id):
     for volume in drives_info:
         if "raw" == volume["format"]:
             pve.nodes(hostname).storage(storage_id).content(volume["volid"]).delete()
+
+def find_unattached_nvme_ssds(pve, hostname):
+    """return a list of unattached SSD pci devices"""
+    all_storage_pci_devices = list_pci_devices(pve, hostname, "storage")
+    #logging.info(f"all ssd devices: {[dev.get('id') for dev in all_storage_pci_devices]}")
+    blacklisted_devices = ['0000:08:00.0'] # NVMe controller - /dev/nvme0n1 - should be calculated
+    # TODO: calculate the used devices:
+    # disks = pve.nodes(hostname).disks.list.get()
+    # used_devices_dev_path = [disk["devpath"] for disk in disks if disk.get('used', None)]
+    # unused_pci_devices_list = [device for device in storage_pci_devices if device.get('id') not in used_devices_dev_path]
+    # logging.info(f"used devices: {used_devices_dev_path}")
+    # logging.info(f"unused devices: {unused_pci_devices_list}")
+    filtered_listed_devices = [device for device in all_storage_pci_devices\
+                               if device.get('id') not in blacklisted_devices]
+    #logging.info(f"filtered ssd devices: {[dev.get('id') for dev in filtered_listed_devices]}")
+    attached_pci_devices_list = attached_pci_devices(pve, hostname)
+    attached_pci_device_ids = [device.get('id') for device in attached_pci_devices_list]
+    # logging.info(f"attached pci device ids: {attached_pci_device_ids}")
+    unattached_devices = [device for device in filtered_listed_devices\
+                          if device.get('id') not in attached_pci_device_ids]
+    # logging.info(f"unattached ssd devices: {[dev.get('id') for dev in unattached_devices]}")
+    return unattached_devices
+
+
+# we need a way to reattach the ssd to the host after we used it as a passthrough device for the VM
+# we can do this by running the following command:
+# the device is not visible in the host after the VM is stopped
+# note that the device is used by the driver:
+
+# lspci -nnk -s '0000:82:00.0'
+# Kernel driver in use: vfio-pci
+
+# we can reattach the device to the host by running the following command:
+# echo 0000:82:00.0 > /sys/bus/pci/drivers/vfio-pci/unbind
+# echo 0000:82:00.0 > /sys/bus/pci/drivers/nvme/bind
+# or
+# echo '0000:82:00.0' > /sys/bus/pci/drivers_probe
+
+# now if we run:
+# lspci -nnk -s '0000:82:00.0'
+# we should see:
+#   Kernel driver in use: nvme
+
+# https://stackoverflow.com/questions/36022132/re-enumerate-and-use-pcie-ssd-in-linux-without-shutdown
+def reclaim_unused_disks(pve, hostname):
+    """
+    Reclaims unused disks from guest VMs on a Proxmox node and reassigns them to the host.
+
+    Args:
+        hostname: Hostname of the Proxmox node.
+    """
+    reattached_disks = []
+    # Find unattached NVMe SSD devices
+    unattached_disks = find_unattached_nvme_ssds(pve, hostname)
+
+    # Check if any unattached disks are found
+    if not unattached_disks:
+        logging.debug(f"No unattached NVMe SSDs found on node {hostname}")
+        return reattached_disks
+
+    # Loop through unattached disks
+    for disk in unattached_disks:
+        pci_address = disk.get('id')
+        logging.debug(f"Reclaiming unused disk with PCI address: {pci_address} on node {hostname}")
+
+        # Unbind the disk from the guest VM (assuming vfio-pci driver)
+        try:
+            with open(f"/sys/bus/pci/drivers/vfio-pci/unbind", "w") as f:
+                f.write(pci_address)
+            logging.debug(f"Unbound disk {pci_address} from guest VM")
+        except FileNotFoundError:
+            logging.debug(f"vfio-pci driver not found, skipping unbind for {pci_address}")
+
+        # Reattach the disk to the host (using nvme driver)
+        try:
+            with open("/sys/bus/pci/drivers/nvme/bind", "w") as f:
+                f.write(pci_address)
+            logging.debug(f"Reattached disk {pci_address} to the host")
+            reattached_disks.append(pci_address)
+        except FileNotFoundError:
+            logging.debug(f"nvme driver not found, attempting drivers_probe for {pci_address}")
+            try:
+                with open("/sys/bus/pci/drivers_probe", "w") as f:
+                    f.write(pci_address)
+                logging.debug(f"Reattached disk {pci_address} to the host using drivers_probe")
+                reattached_disks.append(pci_address)
+            except FileNotFoundError:
+                logging.debug(f"Failed to reattach disk {pci_address} using drivers_probe")
+    return reattached_disks

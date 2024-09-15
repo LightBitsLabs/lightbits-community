@@ -49,27 +49,11 @@ def delete_emulated_ssds(ctx, hostname, vmid, storage_id):
 @click.argument('hostname', required=True)
 @click.pass_context
 def find_unattached_nvme_ssds(ctx, hostname):
-    print(json.dumps(_find_unattached_nvme_ssds(ctx.obj.pve, hostname), indent=2))
+    print(json.dumps(utils.find_unattached_nvme_ssds(ctx.obj.pve, hostname), indent=2))
 
 
-def _find_unattached_nvme_ssds(pve, hostname):
-    """return a list of unattached SSD pci devices"""
-    all_storage_pci_devices = utils.list_pci_devices(pve, hostname, "storage")
-    #logging.info(f"all ssd devices: {[dev.get('id') for dev in all_storage_pci_devices]}")
-    blacklisted_devices = ['0000:08:00.0'] # NVMe controller - /dev/nvme0n1 - should be calculated
-    # TODO: calculate the used devices:
-    # disks = pve.nodes(hostname).disks.list.get()
-    # used_devices_dev_path = [disk["devpath"] for disk in disks if disk.get('used', None)]
-    # unused_pci_devices_list = [device for device in storage_pci_devices if device.get('id') not in used_devices_dev_path]
-    # logging.info(f"used devices: {used_devices_dev_path}")
-    # logging.info(f"unused devices: {unused_pci_devices_list}")
-    filtered_listed_devices = [device for device in all_storage_pci_devices\
-                               if device.get('id') not in blacklisted_devices]
-    #logging.info(f"filtered ssd devices: {[dev.get('id') for dev in filtered_listed_devices]}")
-    attached_pci_devices_list = utils.attached_pci_devices(pve, hostname)
-    attached_pci_device_ids = [device.get('id') for device in attached_pci_devices_list]
-    # logging.info(f"attached pci device ids: {attached_pci_device_ids}")
-    unattached_devices = [device for device in filtered_listed_devices\
-                          if device.get('id') not in attached_pci_device_ids]
-    # logging.info(f"unattached ssd devices: {[dev.get('id') for dev in unattached_devices]}")
-    return unattached_devices
+@ssds_physical_group.command('reattach', help="Reattach the NVMe SSDs to the host")
+@click.argument('hostname', required=True)
+@click.pass_context
+def reclaim_unused_nvme_ssds(ctx, hostname):
+    print(json.dumps(utils.reclaim_unused_disks(ctx.obj.pve, hostname), indent=2))

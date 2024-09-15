@@ -14,14 +14,15 @@ setup(
               'lbprox/cli',
               'lbprox/common',
               'lbprox/deployment',
+              'lbprox/snippets',
+              'lbprox/dashboard',
               'lbprox/cli/allocations',
               'lbprox/cli/data_network',
               'lbprox/cli/image_store',
               'lbprox/cli/os_images',
               'lbprox/cli/dashboard',
               'lbprox/cli/prom_discovery',
-              'lbprox/cli/nodes',
-              'lbprox/dashboard'
+              'lbprox/cli/nodes'
     ],          
     entry_points={
         'console_scripts': [
