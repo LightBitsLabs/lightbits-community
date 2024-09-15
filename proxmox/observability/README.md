@@ -19,7 +19,41 @@ Follow these instructions to install `lbprox` cli:
 - [`lbprox` Installation](../lbprox/README.md#lbprox-installation)
 - [Setup workdir for lbprox cli](../lbprox/README.md#setup-workdir-for-lbprox-cli)
 
-## lbprox-dashboard service
+## Running Observability services
+
+All the observability services are running using `docker compose`
+
+First, clone the project:
+
+```bash
+git clone https://github.com/LightBitsLabs/lightbits-community.git
+cd lightbits-community/proxmox/observability/
+```
+
+Next, create a `.env` file that would contain some of the env-vars we need for compose.
+
+Following command would generate `.env` file and populate it with relevant fields:
+
+```bash
+cat <<EOF > .env
+UID=$(id -u)
+GID=$(id -g)
+UNAME=$(whoami)
+DOCKER_GID=$(getent group docker | cut -d: -f3)
+HOST_IP=$(ip addr show ens18 | grep inet | head -1 | awk '{print $2}' | cut -d/ -f1)
+LBPROX_IMG=lbdocker:5000/lbprox:v0.1.0
+EOF
+```
+
+Now just run:
+
+```bash
+docker compose up -d
+```
+
+## Running dashboard and prom-discovery on host (not-recommended)
+
+### lbprox-dashboard service
 
 Following commands will generate a systemd unit-file that will run the `lbprox` dashboard:
 
@@ -27,24 +61,6 @@ Following commands will generate a systemd unit-file that will run the `lbprox` 
 lbprox dashboard unit-file | sudo tee /etc/systemd/system/lbprox-dashboard.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now lbprox-dashboard
-```
-
-## Monitoring Services (Prometheus and Grafana)
-
-```bash
-cd lightbits-community/proxmox/observability
-docker compose -f docker-compose.yml up -d
-```
-
-Previous command will create the following containers:
-
-```bash
-docker ps
-CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS         PORTS                                       NAMES
-6cc215082472   grafana/grafana:latest      "sh -euc /run.sh\n"      13 seconds ago   Up 3 seconds   0.0.0.0:3000->3000/tcp, :::3000->3000/tcp   grafana
-7cdd0cdba5ca   grafana/loki:3.1.1          "/usr/bin/loki -conf…"   13 seconds ago   Up 3 seconds   0.0.0.0:3100->3100/tcp, :::3100->3100/tcp   loki
-8bbf7e8d8e2d   prom/prometheus:latest      "/bin/prometheus --c…"   2 minutes ago    Up 2 minutes   0.0.0.0:9090->9090/tcp, :::9090->9090/tcp   prometheus
-de73cbf1de39   prom/node-exporter:latest   "/bin/node_exporter …"   3 minutes ago    Up 3 minutes   9100/tcp                                    node-exporter
 ```
 
 ### lbprox-prom-discovery service
