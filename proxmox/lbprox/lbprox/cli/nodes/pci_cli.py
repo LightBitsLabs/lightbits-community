@@ -2,13 +2,12 @@ import json
 import click
 
 from lbprox.common import utils
-import lbprox.cli.nodes.cli as nodes_cli
+# import lbprox.cli.nodes.cli as nodes_cli
 
-@nodes_cli.nodes_group.group("pci")
+@click.group("pci")
 def nodes_pci_group():
     pass
 
-nodes_cli.nodes_group.add_command(nodes_pci_group)
 
 @nodes_pci_group.command("list-devices")
 @click.argument('hostname', required=True)

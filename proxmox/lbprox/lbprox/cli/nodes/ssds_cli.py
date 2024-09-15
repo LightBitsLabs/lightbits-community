@@ -2,14 +2,11 @@ import json
 import click
 
 from lbprox.common import utils
-import lbprox.cli.nodes.cli as nodes_cli
 
 
-@nodes_cli.nodes_group.group("ssds")
+@click.group("ssds")
 def nodes_ssds_group():
     pass
-
-nodes_cli.nodes_group.add_command(nodes_ssds_group)
 
 @nodes_ssds_group.group("emulated")
 def emulated_group():

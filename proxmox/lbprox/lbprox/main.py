@@ -34,7 +34,7 @@ class AppContext(object):
         self.config_file = config_file
         with open(self.config_file, 'r') as f:
             config = yaml.load(f.read(), Loader=yaml.FullLoader)
-        logging.info(f"config:\n{config}")
+        logging.debug(f"config:\n{config}")
         self.pve, last_active_hostname = self.get_proxmox_api(config, username, password)
         assert self.pve, f"failed to create Proxmox API object: {config}"
         # update last know active node
@@ -100,9 +100,7 @@ def cli(ctx, username, password, debug, config_file):
     utils.basicConfig(debug)
     if not os.path.exists(config_file):
         raise RuntimeError(f"config file does not exist at {config_file}")
-    logging.info(f"config_file: '{config_file}'")
-    # with open(config_file, 'r') as f:
-    #     logging.info(f"config_file content - '{config_file}':\n{f.read()}")
+    logging.debug(f"config_file: '{config_file}'")
     ctx.obj = AppContext(username, password, config_file, debug)
 
 

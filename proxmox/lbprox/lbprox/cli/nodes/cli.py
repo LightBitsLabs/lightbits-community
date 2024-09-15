@@ -3,12 +3,16 @@ import click
 
 from lbprox.common.vm_tags import VMTags
 from lbprox.common import utils
-
+import lbprox.cli.nodes.pci_cli as pci_cli
+import lbprox.cli.nodes.ssds_cli as ssds_cli
 
 
 @click.group("nodes")
 def nodes_group():
     pass
+
+nodes_group.add_command(pci_cli.nodes_pci_group)
+nodes_group.add_command(ssds_cli.nodes_ssds_group)
 
 
 @nodes_group.command("list")
