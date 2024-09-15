@@ -4,6 +4,11 @@ single_numa_target_hardware: &single_numa_target_hardware
   base_memory: 12GB
   numa: 1
 
+small_target_1numa_pass_through_ssd_hardware: &small_target_1numa_pass_through_ssd_hardware
+  cores: 9
+  base_memory: 24GB
+  numa: 1
+
 
 tiny_target_1numa_hardware: &tiny_target_1numa_hardware
   cores: 5
@@ -67,7 +72,7 @@ machine_types:
     name: target-small-1numa-passthrough-ssd
     <<: *base_target
     properties:
-      <<: *single_numa_target_hardware
+      <<: *small_target_1numa_pass_through_ssd_hardware
       <<: *bridge_network_config
       ssds:
         count: 4
