@@ -34,6 +34,7 @@ class AppContext(object):
         self.config_file = config_file
         with open(self.config_file, 'r') as f:
             config = yaml.load(f.read(), Loader=yaml.FullLoader)
+        logging.info(f"config:\n{config}")
         self.pve, last_active_hostname = self.get_proxmox_api(config, username, password)
         assert self.pve, f"failed to create Proxmox API object: {config}"
         # update last know active node
@@ -53,23 +54,23 @@ class AppContext(object):
             try:
                 urllib3.HTTPConnectionPool(last_active, maxsize=10, block=True)
                 pve = proxmox.ProxmoxAPI(last_active, user=f"{username}@pam",
-                                        password=password, verify_ssl=False,
-                                        timeout=timeout)
+                                         password=password, verify_ssl=False,
+                                         timeout=timeout)
                 return pve, last_active
             except Exception as ex:
-                logging.debug(f"failed to connect to last active: {last_active}. will look for new active: {ex}")
+                logging.warning(f"failed to connect to last active: {last_active}. will look for new active: {ex}")
 
         for node in config["nodes"]:
             hostname = node.get('hostname')
             try:
                 urllib3.HTTPConnectionPool(hostname, maxsize=10, block=True)
                 pve = proxmox.ProxmoxAPI(hostname, user=f"{username}@pam",
-                                        password=password, verify_ssl=False,
-                                        timeout=timeout)
+                                         password=password, verify_ssl=False,
+                                         timeout=timeout)
                 return pve, hostname
             except Exception as ex:
-                logging.debug(f"failed to connect to {hostname}: {ex}. keep looking...")
-        return None
+                logging.warning(f"failed to connect to {hostname}: {ex}. keep looking...")
+        return None, None
 
 
 @click.group(name="proxmox")
@@ -96,10 +97,13 @@ def cli(ctx, username, password, debug, config_file):
     Returns:
         None
     """
-    if not os.path.exists(config_file):
-        raise RuntimeError(f"config file does not exist at {constants.DEFAULT_CONFIG_FILE}")
-    ctx.obj = AppContext(username, password, config_file, debug)
     utils.basicConfig(debug)
+    if not os.path.exists(config_file):
+        raise RuntimeError(f"config file does not exist at {config_file}")
+    logging.info(f"config_file: '{config_file}'")
+    # with open(config_file, 'r') as f:
+    #     logging.info(f"config_file content - '{config_file}':\n{f.read()}")
+    ctx.obj = AppContext(username, password, config_file, debug)
 
 
 @cli.command()

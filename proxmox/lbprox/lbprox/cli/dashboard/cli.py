@@ -12,9 +12,10 @@ def dashboard_group():
 @dashboard_group.command("serve")
 @click.option('-i', "--interval", required=False, default=30, help="how often to update the dashboard")
 @click.option('-p', "--port", required=False, default=9000, help="port to serve the dashboard on")
+@click.option('-n', "--observability-hostname", required=True, help="hostname of the observability server")
 @click.pass_context
-def serve_dashboard(ctx, interval, port):
-    dashboard.serve(ctx.obj.pve, port, interval)
+def serve_dashboard(ctx, interval, port, observability_hostname):
+    dashboard.serve(ctx.obj.pve, port, interval, observability_hostname)
 
 
 @dashboard_group.command("unit-file")

@@ -67,7 +67,7 @@ def serve_prom_ds(ctx, interval, targets_directory):
         with open(f"{targets_directory}/api-service/targets.yaml", "w") as f:
             f.write(yaml.dump(clusters_api_service_targets))
         
-        subprocess.run("curl -XPOST http://localhost:9090/-/reload", shell=True)
+        subprocess.run("curl -s -XPOST http://prometheus:9090/-/reload", shell=True)
         time.sleep(interval)
 
 @prom_discovery_group.command("unit-file")
