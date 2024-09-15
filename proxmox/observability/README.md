@@ -1,5 +1,15 @@
 # Observability
 
+- [Observability](#observability)
+  - [Requirements](#requirements)
+  - [docker-compose installation](#docker-compose-installation)
+  - [lbprox working directory and configuration](#lbprox-working-directory-and-configuration)
+  - [Running Observability services](#running-observability-services)
+    - [Running dashboard and prom-discovery on host (less-recommended)](#running-dashboard-and-prom-discovery-on-host-less-recommended)
+    - [lbprox-dashboard service](#lbprox-dashboard-service)
+    - [lbprox-prom-discovery service](#lbprox-prom-discovery-service)
+  - [Logging](#logging)
+
 ## Requirements
 
 ## docker-compose installation
@@ -12,11 +22,10 @@ Most of these monitoring services will run inside a docker container, using `doc
 ./scripts/install_docker_ubuntu.sh
 ```
 
-## lbprox CLI
+## lbprox working directory and configuration
 
-Follow these instructions to install `lbprox` cli:
+Follow these instructions to setup `lbprox` working directory:
 
-- [`lbprox` Installation](../lbprox/README.md#lbprox-installation)
 - [Setup workdir for lbprox cli](../lbprox/README.md#setup-workdir-for-lbprox-cli)
 
 ## Running Observability services
@@ -51,7 +60,10 @@ Now just run:
 docker compose up -d
 ```
 
-## Running dashboard and prom-discovery on host (not-recommended)
+### Running dashboard and prom-discovery on host (less-recommended)
+
+<details>
+<summary>Click to expand</summary>
 
 ### lbprox-dashboard service
 
@@ -76,6 +88,7 @@ lbprox prom-discovery unit-file -t /mnt/workspace/lightbits-community/proxmox/ob
 sudo systemctl daemon-reload
 sudo systemctl enable --now lbprox-prom-discovery
 ```
+</details>
 
 ## Logging
 
