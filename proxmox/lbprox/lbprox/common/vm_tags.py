@@ -99,6 +99,9 @@ class VMTags():
             if len(tag.split('.')) == 2:
                 key, value = tag.split('.')
                 new_tags.set_tag(key, value)
+            if len(tag.split('.')) > 2:
+                splitted = tag.split('.')
+                new_tags.set_tag(splitted[0], ".".join(splitted[1:]))
         return new_tags
 
 
