@@ -112,7 +112,9 @@ def create_vms(ctx, hostname, storage_id, allocation_descriptor_name,
     cluster_vms = _create_vms(ctx.obj.pve,
                                hostname, storage_id,
                                allocation_descriptor_name,
-                               start_vm, tags, wait_for_ip)
+                               start_vm, tags, wait_for_ip,
+                               ssh_username=ctx.obj.username,
+                               ssh_password=ctx.obj.password)
     if cluster_vms:
         print(json.dumps(cluster_vms, indent=2))
 
@@ -131,7 +133,7 @@ def deallocate_vms(ctx, storage_id, allocation_id=None, tags=None):
         tags = VMTags.parse_tags(tags)
     else:
         tags = VMTags().set_allocation(allocation_id)
-    _delete_allocations(ctx.obj.pve, storage_id, tags)
+    _delete_allocations(ctx.obj.pve, storage_id, ctx.obj.username, ctx.obj.password, tags)
 
 
 
@@ -394,7 +396,8 @@ def generate_vm_name(node_name, allocation_id, machine_name):
     return f"{node_name}-{allocation_id}-{machine_name}"
 
 def _create_vms(pve, hostname, storage_id, allocation_descriptor_name,
-                 start_vm, tags, wait_for_ip):
+                 start_vm, tags, wait_for_ip,
+                 ssh_username, ssh_password):
     allocation_info = {
         "allocation_id": str(uuid.uuid4())[:4],
         "servers": []
@@ -405,7 +408,7 @@ def _create_vms(pve, hostname, storage_id, allocation_descriptor_name,
         logging.error(f"allocation descriptor not found: {allocation_descriptor_name}")
         return None
 
-    ssh_client = ssh.SSHClient(hostname, "root", "light")
+    ssh_client = ssh.SSHClient(hostname, ssh_username, ssh_password)
     vmids = []
     types = flavors.list_machine_types()
     for machine in allocation_descriptor["machines"]:
@@ -443,13 +446,13 @@ def _create_vms(pve, hostname, storage_id, allocation_descriptor_name,
     return allocation_info
 
 
-def _delete_allocations(pve, storage_id, tags: VMTags):
+def _delete_allocations(pve, storage_id, ssh_username, ssh_password, tags: VMTags):
     vms = utils.list_cluster_vms(pve, tags)
 
     def _del_allocation(vm):
         vmid = vm.get('vmid')
         hostname = vm.get('node')
-        ssh_client = ssh.SSHClient(hostname, "root", "light")
+        ssh_client = ssh.SSHClient(hostname, ssh_username, ssh_password)
         _delete_allocation(pve, ssh_client, hostname, storage_id, vmid)
         ssh_client.close()
 
