@@ -142,6 +142,14 @@ lbprox setup-data-network
 
 In order to provide isolation, and DHCP inside each Proxmox node we can utilize the simple Zone network.
 
+> NOTE:
+>
+> install dnsmasq on each proxmox node to get this functionallity using:
+>
+> ```bash
+> apt install dnsmasq -y
+> ```
+
 Following command will deploy on all nodes the same DHCP server with the same IPAM configuration that will
 allow allocating dynamic IPs in the range: `10.101.1.10-10.101.1.200`
 
