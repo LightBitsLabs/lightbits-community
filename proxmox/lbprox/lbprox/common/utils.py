@@ -9,11 +9,6 @@ import sys
 import proxmoxer
 
 from lbprox.common.vm_tags import VMTags
-from lbprox.common.constants import LAB_ACCESS_NETWORK
-
-
-def access_network_ip(ip_string):
-    return ipaddress.ip_address(ip_string) in LAB_ACCESS_NETWORK
 
 
 def basicConfig(debug=False):
@@ -111,8 +106,26 @@ def seconds_to_human_readable(seconds):
     return f"{days}d {hours}h {minutes}m {seconds}s"
 
 
+def zero_out_host_bits(cidr):
+    """Zeros out the host bits of an IP address based on the given CIDR notation.
+
+    Args:
+        cidr (str): The CIDR notation of the IP address.
+
+    Returns:
+        ipaddress.IPv4Network: The IP network with zeroed-out host bits.
+    """
+
+    network = ipaddress.ip_network(cidr)
+    network_mask = network.netmask
+    return network.ip & network_mask
+
+
 def get_vm_ip_address(pve, hostname, vmid, expected_ip_addresses=1, tmo=60, interval=10):
     count = 1 if (tmo == 0 or interval == 0) else (tmo // interval)
+    access_bridge_network = pve.nodes(hostname).network.get("vmbr0")
+    assert access_bridge_network and access_bridge_network["cidr"], "we assume we have this bridge network as our access network"
+    access_network = ipaddress.IPv4Interface(access_bridge_network["cidr"]).network
 
     ipv4_addresses = []
     for _ in range(count):
@@ -151,7 +164,7 @@ def get_vm_ip_address(pve, hostname, vmid, expected_ip_addresses=1, tmo=60, inte
                     if ip.get('ip-address-type') == 'ipv4':
                         ipv4 = ip.get('ip-address', None)
                         if ipv4:
-                            purpose = "access" if access_network_ip(ipv4) else "data"
+                            purpose = "access" if ipaddress.ip_address(ipv4) in access_network else "data"
                             ipv4_addresses.append({"name": iface_name, "ipv4": ipv4, "purpose": purpose})
 
             logging.debug(f"{hostname}:{vmid} looking for {expected_ip_addresses} ip addresses, found: {len(ipv4_addresses)}")
