@@ -165,7 +165,7 @@ lbprox --debug data-network create --zone-name=data0
 In order to delete this network and all other resources related you can run the following command:
 
 ```bash
-lbprox delete-data-network rack16-server01 --zone-name=data0
+lbprox data-network delete rack16-server01 --zone-name=data0
 ```
 
 ## Day-To-Day Operations
@@ -196,14 +196,15 @@ Example sizes:
 
 ```bash
 lbprox allocation list flavors
-+-------+-------------------------------------+-------+-------------+------+--------+------+
-| index | name                                | cores | base_memory | ssds | ifaces | numa |
-+-------+-------------------------------------+-------+-------------+------+--------+------+
-| 1     | single-small-emulated-ssd-target    | 9     | 12GB        | 4    | 2      | 1    |
-| 2     | single-small-passthrough-ssd-target | 9     | 12GB        | 4    | 2      | 1    |
-| 3     | small-initiator                     | 1     | 1GB         | 0    | 2      | 1    |
-| 4     | observability                       | 2     | 4GB         | 0    | 1      | 1    |
-+-------+-------------------------------------+-------+-------------+------+--------+------+
++-------+------------------------------------+-------+-------------+------+--------+------+
+| index | name                               | cores | base_memory | ssds | ifaces | numa |
++-------+------------------------------------+-------+-------------+------+--------+------+
+| 1     | target-small-1numa-emulated-ssd    | 9     | 12GB        | 4    | 2      | 1    |
+| 2     | target-tiny-1numa-emulated-ssd     | 5     | 12GB        | 4    | 2      | 1    |
+| 3     | target-small-1numa-passthrough-ssd | 9     | 24GB        | 4    | 2      | 1    |
+| 4     | initiator-small                    | 1     | 1GB         | 0    | 2      | 1    |
+| 5     | observability-small                | 2     | 4GB         | 0    | 1      | 1    |
++-------+------------------------------------+-------+-------------+------+--------+------+
 ```
 
 Or create entire cluster:
@@ -211,15 +212,17 @@ Or create entire cluster:
 first list the allocation-descriptors that exists:
 
 ```bash
-+-------+-----------------------------------------------------------------+---------------+--------------------------------------+
-| index | name                                                            | machine count | description                          |
-+-------+-----------------------------------------------------------------+---------------+--------------------------------------+
-| 1     | lightbits_cluster_12x_target_small_1numa_emulated_ssd_1x_client | 13            | 12 target cluster with 1 client      |
-| 2     | lightbits_cluster_12x_target_tiny_1numa_emulated_ssd_1x_client  | 13            | 12 tiny target cluster with 1 client |
-| 3     | lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client   | 4             | 3 tiny targets cluster with 1 client |
-| 4     | lightbits_cluster_3x_target_small_1numa_emulated_ssd_1x_client  | 4             | 3 targets cluster with 1 client      |
-| 5     | observability                                                   | 1             | all in 1 observability VM            |
-+-------+-----------------------------------------------------------------+---------------+--------------------------------------+
++-------+-----------------------------------------------------------------+---------------+--------------------------------------------------------+
+| index | name                                                            | machine count | description                                            |
++-------+-----------------------------------------------------------------+---------------+--------------------------------------------------------+
+| 1     | lightbits_cluster_12x_target_small_1numa_emulated_ssd_1x_client | 13            | 12 target cluster with 1 client                        |
+| 2     | lightbits_cluster_12x_target_tiny_1numa_emulated_ssd_1x_client  | 13            | 12 tiny target cluster with 1 client                   |
+| 3     | lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client   | 4             | 3 tiny targets cluster with 1 client                   |
+| 4     | lightbits_cluster_3x_target_small_1numa_emulated_ssd_1x_client  | 4             | 3 targets cluster with 1 client                        |
+| 5     | lightbits_cluster_3x_target_tiny_1numa_phys_ssd_1x_client       | 4             | 3 tiny targets cluster with physical ssds and 1 client |
+| 6     | observability                                                   | 1             | all in 1 observability VM                              |
++-------+-----------------------------------------------------------------+---------------+--------------------------------------------------------+
+
 ```
 
 Running the following command will deploy the VMs described by selected descriptor - `lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client`

@@ -168,7 +168,8 @@ def nvme_initiator(ctx, allocation_id, base_url, run_deploy, stream_output=True)
 
 
 def _create_vm_on_proxmox(pve, ssh_client: ssh.SSHClient,
-                          hostname, storage_id, vm_name, machine_info,
+                          hostname, storage_id, vm_name,
+                          machine_name, machine_info,
                           tags: VMTags):
     free_vf_pci_id = None
     try:
@@ -231,7 +232,10 @@ def _create_vm_on_proxmox(pve, ssh_client: ssh.SSHClient,
                 # this must happen before we create the VM since qm create will delete the VMID directory
                 size = utils.convert_size_to_bytes(ssds['size'])
                 utils.create_emulated_ssds(pve, hostname, vmid, storage_id, ssds["count"], size)
-                emulated_disks_args = create_args_string(vmid, ssds["count"], storage_id)
+                emulated_disks_args = create_args_string(vmid, ssds["count"],
+                                                         storage_id,
+                                                         tags.get_allocation(),
+                                                         machine_name)
                 pve.nodes(hostname).qemu(vmid).config.put(args=emulated_disks_args)
             elif ssds['type'] == "passthrough":
                 unattached_ssds = utils.find_unattached_nvme_ssds(pve, hostname)
@@ -293,14 +297,18 @@ def _generate_inventory(pve, allocation_id,
         if len(vm_ips) == 0:
             raise RuntimeError("must have at least one data IP address")
         elif len(vm_ips) == 1:
-            access_ip = data_ip = vm_ips[0]
+            if vm_ips[0]["purpose"] == "access":
+                access_ip = vm_ips[0]["ipv4"]
+            elif vm_ips[0]["purpose"] == "data":
+                data_ip = vm_ips[0]["ipv4"]
         elif len(vm_ips) > 1:
             for vm_ip_info in vm_ips:
                 if vm_ip_info["purpose"] == "access":
                     access_ip = vm_ip_info["ipv4"]
                 elif vm_ip_info["purpose"] == "data":
                     data_ip = vm_ip_info["ipv4"]
-        assert data_ip, f"failed to get data IP for VM: {vmid}"
+        if not data_ip:
+            logging.warning(f"failed to get data IP for VM: {vmid}")
         assert access_ip, f"failed to get access IP for VM: {vmid}"
         if not cluster_info.get("servers", None):
             cluster_info["servers"] = {}
@@ -329,14 +337,18 @@ def _generate_inventory(pve, allocation_id,
         if len(vm_ips) == 0:
             raise RuntimeError("must have at least one data IP address")
         elif len(vm_ips) == 1:
-            access_ip = data_ip = vm_ips[0]
+            if vm_ips[0]["purpose"] == "access":
+                access_ip = vm_ips[0]["ipv4"]
+            elif vm_ips[0]["purpose"] == "data":
+                data_ip = vm_ips[0]["ipv4"]
         elif len(vm_ips) > 1:
             for vm_ip_info in vm_ips:
                 if vm_ip_info["purpose"] == "access":
                     access_ip = vm_ip_info["ipv4"]
                 elif vm_ip_info["purpose"] == "data":
                     data_ip = vm_ip_info["ipv4"]
-        assert data_ip, f"failed to get data IP for VM: {vmid}"
+        if not data_ip:
+            logging.warning(f"failed to get data IP for VM: {vmid}")
         assert access_ip, f"failed to get access IP for VM: {vmid}"
 
         initiators[server_name] = {
@@ -426,7 +438,7 @@ def _create_vms(pve, hostname, storage_id, allocation_descriptor_name,
         # Get the next VM ID
         vmid = _create_vm_on_proxmox(pve, ssh_client, hostname,
                                      storage_id, vm_hostname,
-                                     machine_info, new_tags)
+                                     machine["name"], machine_info, new_tags)
         if not vmid:
             logging.error(f"failed to allocate VM: {vm_hostname}")
             return None
@@ -462,12 +474,13 @@ def _delete_allocations(pve, storage_id, ssh_username, ssh_password, tags: VMTag
                                    desc="deleting VMs", max_workers=10)
 
 
-def create_args_string(vmid, disk_count, storage_id):
+def create_args_string(vmid, disk_count, storage_id, allocation_id, vm_name):
     images_path = utils.get_images_path(storage_id)
     args = ""
     for i in range(disk_count):
         idx = f"{i:02d}"
-        args += f" -drive file={images_path}/{vmid}/nvme{idx}.raw,if=none,id=nvme{idx} -device nvme,drive=nvme{idx},serial=nvme{idx}"
+        serial_number = f"{allocation_id}-{vm_name}"
+        args += f" -drive file={images_path}/{vmid}/nvme{idx}.raw,if=none,id=nvme{idx} -device nvme,drive=nvme{idx},serial={serial_number}-nvme{idx}"
     return args
 
 

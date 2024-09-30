@@ -9,19 +9,21 @@ def data_network_group():
 
 
 @data_network_group.command("create")
-@click.option('--zone-name', default="data0")
-@click.option('--subnet', default="10.101.1.0/24", help="subnet in CIDR format")
-@click.option('--gateway', type=str, default="10.101.1.1")
-@click.option('--dhcp-range', multiple=True, default=["start-address=10.101.1.10,end-address=10.101.1.200"])
+@click.option('--zone-name', default="data0", help="name of the zone (default: data0)")
+@click.option('--subnet', default="10.101.1.0/24", help="subnet in CIDR format (default: 10.101.1.0/24)")
+@click.option('--gateway', type=str, default="10.101.1.1", help="gateway IP address (default: 10.101.1.1)")
+@click.option('--dhcp-range', multiple=True,
+              default=["start-address=10.101.1.10,end-address=10.101.1.200"],
+              help="dhcp range in start-address=IP,end-address=IP format (default: ['start-address=10.101.1.10,end-address=10.101.1.200']")
 @click.option('--nodes', multiple=True, default=None,
-              help="list of nodes to add to the zone - default is all nodes")
+              help="list of nodes to add to the zone - (default: all nodes)")
 @click.pass_context
 def create_data_network(ctx, zone_name, subnet, gateway, dhcp_range, nodes):
     print(_create_data_network(ctx.obj.pve, zone_name, subnet, gateway, dhcp_range, nodes))
 
 
 @data_network_group.command("delete")
-@click.option('--zone-name', default="data")
+@click.option('--zone-name', default="data0", help="name of the zone (default: data0)")
 @click.pass_context
 def delete_data_network(ctx, zone_name):
     _delete_data_network(ctx.obj.pve, zone_name)
