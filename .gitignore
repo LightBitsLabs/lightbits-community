@@ -3,7 +3,7 @@ vagrant/.vagrant
 
 lbprox.egg-info/
 __pycache__
-.venv
+.venv*
 
 index.html
 
