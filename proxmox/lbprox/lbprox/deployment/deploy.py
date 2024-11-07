@@ -54,7 +54,7 @@ name: {{ data.server.name }}
 nodes:
 - instanceID: 0
   data_ip: {{ data.server.data_ip }}
-  ec_enabled: false
+  ec_enabled: {{ data.ec_enabled }}
   failure_domains:
   - {{ data.server.name }}
   storageDeviceLayout:
@@ -135,7 +135,8 @@ def inventory_directory_exists(allocation_id: str):
 
 
 def generate_inventory(allocation_id: str, cluster_info, initiators,
-                       repo_base_url: str, profile_name: str=None):
+                       repo_base_url: str, profile_name: str=None,
+                       ec_enabled: bool=False):
     cluster_inventory_dir = inventory_directory(allocation_id)
     os.makedirs(cluster_inventory_dir, exist_ok=True)
 
@@ -172,7 +173,8 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
         profile_name = profile_name if profile_name else 'virtual-datapath-templates'
         data = {
             'profile_name': profile_name,
-            'server': server_info
+            'server': server_info,
+	    'ec_enabled': str(ec_enabled).lower()
         }
         host_file_path = os.path.join(host_vars_dir, f'{server_name}.yml')
         render_template(host_vars_template,

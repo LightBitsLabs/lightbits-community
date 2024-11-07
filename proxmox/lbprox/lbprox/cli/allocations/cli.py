@@ -147,10 +147,13 @@ def deallocate_vms(ctx, storage_id, allocation_id=None, tags=None):
               help="should we deploy the cluster, or just generate the inventory files")
 @click.option('--stream-output/--no-stream-output', default=True,
               help="should we stream the ansible output to stdout")
+@click.option('--ec-enabled/--no-ec-enabled', default=False,
+              help="should we set ec")
 @click.pass_context
-def lightbits(ctx, allocation_id, base_url, profile_name, run_deploy, stream_output=True):
+def lightbits(ctx, allocation_id, base_url, profile_name, run_deploy,
+              stream_output=True, ec_enabled=False):
     _deploy_lightbits_cluster(ctx.obj.pve, allocation_id,
-                              base_url, profile_name,
+                              base_url, profile_name, ec_enabled,
                               run_deploy, stream_output)
 
 
@@ -270,7 +273,8 @@ def _extract_cluster_version(repo_base_url):
 
 def _generate_inventory(pve, allocation_id,
                         repo_base_url: str,
-                        profile_name: str=None):
+                        profile_name: str=None,
+                        ec_enabled: bool=False):
     cluster_vms = utils.list_cluster_vms(pve,
                                          VMTags().set_role("target").set_allocation(allocation_id))
     logging.info(f"allocation {allocation_id} has {len(cluster_vms)} VMs with role.target tag")
@@ -363,14 +367,17 @@ def _generate_inventory(pve, allocation_id,
 
     inventory_path = deploy.generate_inventory(allocation_id,
                                                cluster_info, initiators,
-                                               repo_base_url, profile_name)
+                                               repo_base_url, profile_name,
+                                               ec_enabled=ec_enabled)
     logging.info(f"Inventory files generated at: {inventory_path}")
     return inventory_path
 
 
 def _deploy_lightbits_cluster(pve, allocation_id, base_url,
-                              profile_name, run_deploy, stream_output):
-    inventory_path = _generate_inventory(pve, allocation_id, base_url, profile_name)
+                              profile_name,
+                              run_deploy, stream_output, ec_enabled):
+    inventory_path = _generate_inventory(pve, allocation_id,
+                                         base_url, profile_name, ec_enabled)
     if run_deploy:
         deploy.deploy_cluster(inventory_path, stream_output)
 
