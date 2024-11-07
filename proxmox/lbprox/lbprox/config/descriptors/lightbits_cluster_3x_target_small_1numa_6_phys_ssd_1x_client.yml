@@ -1,0 +1,18 @@
+name: lightbits_cluster_3x_target_small_1numa_6_phys_ssd_1x_client
+description: "3 small targets cluster with 6 physical ssds and 1 client"
+machines:
+- name: s00
+  machine_type: target-small-1numa-6-passthrough-ssd
+  role: target
+
+- name: s01
+  machine_type: target-small-1numa-6-passthrough-ssd
+  role: target
+
+- name: s02
+  machine_type: target-small-1numa-6-passthrough-ssd
+  role: target
+
+- name: client0
+  machine_type: initiator-small
+  role: initiator
