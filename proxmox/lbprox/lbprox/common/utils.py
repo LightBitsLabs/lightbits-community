@@ -408,8 +408,10 @@ def reclaim_unused_disks(pve, hostname):
             with open(f"/sys/bus/pci/drivers/vfio-pci/unbind", "w") as f:
                 f.write(pci_address)
             logging.debug(f"Unbound disk {pci_address} from guest VM")
-        except FileNotFoundError:
-            logging.debug(f"vfio-pci driver not found, skipping unbind for {pci_address}")
+        except FileNotFoundError as ex:
+            logging.warn(f"vfio-pci driver not found, skipping unbind for {pci_address}", ex)
+        except OSError as ex:
+            logging.error(f"vfio-pci driver not found, skipping unbind for {pci_address}", ex)
 
         # Reattach the disk to the host (using nvme driver)
         try:
