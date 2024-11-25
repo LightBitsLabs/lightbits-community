@@ -153,8 +153,8 @@ def deallocate_vms(ctx, storage_id, allocation_id=None, tags=None):
 def lightbits(ctx, allocation_id, base_url, profile_name, run_deploy,
               stream_output=True, ec_enabled=False):
     _deploy_lightbits_cluster(ctx.obj.pve, allocation_id,
-                              base_url, profile_name, ec_enabled,
-                              run_deploy, stream_output)
+                              base_url, profile_name,
+                              run_deploy, stream_output, ec_enabled)
 
 
 @allocations_deploy_group.command("initiator")
