@@ -1,9 +1,10 @@
 # lbprox Guide
 
 - [lbprox Guide](#lbprox-guide)
-  - [`lbprox` Installation](#lbprox-installation)
+  - [`lbprox` Requirements](#lbprox-Requirements)
+  - [`lbprox` Virtual Installation Environment](#lbprox-virtual-installation-environment)
   - [Setup workdir for lbprox cli](#setup-workdir-for-lbprox-cli)
-  - [Initial Setup](#initial-setup)
+  - [PROXMOX Initial Setup](#proxmox-initial-setup)
     - [Storage setup](#storage-setup)
     - [Open VFs](#open-vfs)
     - [Create Simple Zone for hypervisor internal data network](#create-simple-zone-for-hypervisor-internal-data-network)
@@ -14,14 +15,22 @@
     - [Delete Everything](#delete-everything)
   - [TODO](#todo)
 
-## `lbprox` Installation
+## `lbprox` Requirements
 
-`lbprox` is a python package that is recommended to be installed in virtual environment.
+In order to install and work with `lbprox` you'll need to have the following:
 
-In order to setup virtual environment. The following commands will install venv if not
-already installed on your system, and will create a virtual-environment under `.venv`
-folder. It will also activate this virtual environment, and all installations will
-be placed at this env.
+  1. Docker is installed 
+  2. The Lightbits repository is configured in a workspace directory. 
+  The `WORKSPACE_TOP` environment variable (created automatically by running `source .env` from the lightbits repository directory) needs to point to the workspace directory, and there should be a "light-app" directory in it.
+  3. It's recommended to place the `lightbits-community` repostiroy in the worksapce directory.
+
+## `lbprox` Virtual Installation Environment
+
+`lbprox` is a python package that is recommended to be installed and run in a virtual environment.
+
+The following commands will install a virtual environment (if not already installed on your system) and create it under `.venv` folder. 
+It will also activate this virtual environment, and all installations will run in this virtual environment. 
+You will use this virtual environment each time you'll need to use `lbprox`.
 
 ```bash
 sudo apt install python3-venv
@@ -74,7 +83,7 @@ In order to deactivate from this environment just run the following command:
 deactivate
 ```
 
-## Initial Setup
+## PROXMOX Initial Setup
 
 ### Storage setup
 
