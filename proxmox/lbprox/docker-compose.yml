@@ -1,0 +1,25 @@
+
+services:
+  lbprox-base: &lbprox-base
+    image: ${LBPROX_IMG}
+    container_name: lbprox
+    network_mode: host
+    environment:
+    - UID=${UID}                   # (1) id retrieved by `id -u`
+    - GID=${GID}                   # (2) grp-id retrieved by `id -g`
+    - UNAME=${UNAME}               # (3) username retrieved by `id -un`
+    - DOCKER_GID=${DOCKER_GID}     # (4) set docker group id on host by `getent group docker | cut -d: -f3`
+    volumes:
+    - ${HOME}/.local/lbprox:${HOME}/.local/lbprox
+    - ${HOME}/.ssh:${HOME}/.ssh
+    restart: "no"
+    stdin_open: true
+    tty: true
+
+  lbprox:
+    <<: *lbprox-base
+    command: lbprox
+
+  lbprox-bash:
+    <<: *lbprox-base
+    command: bash

@@ -183,7 +183,7 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
 
 
 def deploy_cluster(inventory_dir: str, stream_output: bool=True):
-    cmd = f"docker compose run --rm deploy"
+    cmd = "docker compose run --rm -i deploy"
     try:
         if stream_output:
             utils.run_cmd_stream_output(cmd, cwd=inventory_dir)
@@ -191,10 +191,12 @@ def deploy_cluster(inventory_dir: str, stream_output: bool=True):
             utils.run_cmd(cmd, cwd=inventory_dir)
     except subprocess.CalledProcessError as e:
         logging.error(e.stderr.decode().strip())
+    except Exception as e:
+        logging.error(e)
 
 
 def deploy_nvme_initiator(inventory_dir: str, stream_output: bool=True):
-    cmd = f"docker compose run --rm deploy-initiator"
+    cmd = "docker compose run --rm -i deploy-initiator"
     try:
         if stream_output:
             utils.run_cmd_stream_output(cmd, cwd=inventory_dir)
@@ -202,6 +204,8 @@ def deploy_nvme_initiator(inventory_dir: str, stream_output: bool=True):
             utils.run_cmd(cmd, cwd=inventory_dir)
     except subprocess.CalledProcessError as e:
         logging.error(e.stderr.decode().strip())
+    except Exception as e:
+        logging.error(e)
 
 
 # def main():

@@ -370,6 +370,11 @@ def _generate_inventory(pve, allocation_id,
                                                repo_base_url, profile_name,
                                                ec_enabled=ec_enabled)
     logging.info(f"Inventory files generated at: {inventory_path}")
+    logging.info(f"""To deploy the cluster issue following commands:
+
+    cd {inventory_path}
+    docker compose run --rm -i deploy
+""")
     return inventory_path
 
 
