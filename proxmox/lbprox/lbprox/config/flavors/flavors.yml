@@ -51,8 +51,20 @@ passthrough_network_config: &passthrough_network_config
 
 # name patterm: <role>-<size>-<numa-count>-<extra_info>
 machine_types:
-  target-small-1numa-emulated-ssd: &base_target
-    name: target-small-1numa-emulated-ssd
+  target-small-1numa-large-emulated-ssd:
+    name: target-small-1numa-large-emulated-ssd
+    os_image: rocky-9-target
+    properties:
+      <<: *single_numa_target_hardware
+      <<: *bridge_network_config
+      base_memory: 20GB
+      ssds:
+        count: 6
+        size: 20GB
+        type: emulated # or - passthrough and size is ignored
+
+  target-small-1numa-small-emulated-ssd: &base_target
+    name: target-small-1numa-small-emulated-ssd
     os_image: rocky-9-target
     properties:
       <<: *single_numa_target_hardware
@@ -110,6 +122,18 @@ machine_types:
     properties:
       cores: 2
       base_memory: 4GB
+      numa: 1
+      networks:
+      - name: net0
+        type: bridge
+        bridge: vmbr0
+
+  dms:
+    name: dms
+    os_image: rocky-9-target
+    properties:
+      cores: 4
+      base_memory: 12GB
       numa: 1
       networks:
       - name: net0

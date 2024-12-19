@@ -1,0 +1,6 @@
+name: dms
+description: "all in one DMS server"
+machines:
+- name: dms
+  machine_type: dms
+  role: dms

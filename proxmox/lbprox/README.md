@@ -196,15 +196,18 @@ Example sizes:
 
 ```bash
 lbprox allocation list flavors
-+-------+------------------------------------+-------+-------------+------+--------+------+
-| index | name                               | cores | base_memory | ssds | ifaces | numa |
-+-------+------------------------------------+-------+-------------+------+--------+------+
-| 1     | target-small-1numa-emulated-ssd    | 9     | 12GB        | 4    | 2      | 1    |
-| 2     | target-tiny-1numa-emulated-ssd     | 5     | 12GB        | 4    | 2      | 1    |
-| 3     | target-small-1numa-passthrough-ssd | 9     | 24GB        | 4    | 2      | 1    |
-| 4     | initiator-small                    | 1     | 1GB         | 0    | 2      | 1    |
-| 5     | observability-small                | 2     | 4GB         | 0    | 1      | 1    |
-+-------+------------------------------------+-------+-------------+------+--------+------+
++-------+---------------------------------------+-------+-------------+------+--------+------+
+| index | name                                  | cores | base_memory | ssds | ifaces | numa |
++-------+---------------------------------------+-------+-------------+------+--------+------+
+| 1     | target-small-1numa-large-emulated-ssd | 9     | 20GB        | 6    | 2      | 1    |
+| 2     | target-small-1numa-small-emulated-ssd | 9     | 12GB        | 4    | 2      | 1    |
+| 3     | target-tiny-1numa-emulated-ssd        | 5     | 12GB        | 4    | 2      | 1    |
+| 4     | target-small-1numa-4-passthrough-ssd  | 9     | 24GB        | 4    | 2      | 1    |
+| 5     | target-small-1numa-6-passthrough-ssd  | 9     | 30GB        | 6    | 2      | 1    |
+| 6     | initiator-small                       | 1     | 1GB         | 0    | 2      | 1    |
+| 7     | observability-small                   | 2     | 4GB         | 0    | 1      | 1    |
+| 8     | dms                                   | 4     | 12GB        | 0    | 1      | 1    |
++-------+---------------------------------------+-------+-------------+------+--------+------+
 ```
 
 Or create entire cluster:
@@ -212,17 +215,20 @@ Or create entire cluster:
 first list the allocation-descriptors that exists:
 
 ```bash
-+-------+-----------------------------------------------------------------+---------------+--------------------------------------------------------+
-| index | name                                                            | machine count | description                                            |
-+-------+-----------------------------------------------------------------+---------------+--------------------------------------------------------+
-| 1     | lightbits_cluster_12x_target_small_1numa_emulated_ssd_1x_client | 13            | 12 target cluster with 1 client                        |
-| 2     | lightbits_cluster_12x_target_tiny_1numa_emulated_ssd_1x_client  | 13            | 12 tiny target cluster with 1 client                   |
-| 3     | lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client   | 4             | 3 tiny targets cluster with 1 client                   |
-| 4     | lightbits_cluster_3x_target_small_1numa_emulated_ssd_1x_client  | 4             | 3 targets cluster with 1 client                        |
-| 5     | lightbits_cluster_3x_target_tiny_1numa_phys_ssd_1x_client       | 4             | 3 tiny targets cluster with physical ssds and 1 client |
-| 6     | observability                                                   | 1             | all in 1 observability VM                              |
-+-------+-----------------------------------------------------------------+---------------+--------------------------------------------------------+
-
+lbprox allocations list descriptors
++-------+----------------------------------------------------------------------+---------------+-----------------------------------------------------------+
+| index | name                                                                 | machine count | description                                               |
++-------+----------------------------------------------------------------------+---------------+-----------------------------------------------------------+
+| 1     | lightbits_cluster_12x_target_small_1numa_emulated_ssd_1x_client      | 13            | 12 target cluster with 1 client                           |
+| 2     | lightbits_cluster_3x_target_small_1numa_large_emulated_ssd_1x_client | 4             | 3 targets cluster with 6 large disks and 1 client         |
+| 3     | dms                                                                  | 1             | all in one DMS server                                     |
+| 4     | lightbits_cluster_12x_target_tiny_1numa_emulated_ssd_1x_client       | 13            | 12 tiny target cluster with 1 client                      |
+| 5     | lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client        | 4             | 3 tiny targets cluster with 1 client                      |
+| 6     | lightbits_cluster_3x_target_small_1numa_small_emulated_ssd_1x_client | 4             | 3 targets cluster with small 4 ssds and 1 client          |
+| 7     | lightbits_cluster_3x_target_small_1numa_4_phys_ssd_1x_client         | 4             | 3 small targets cluster with 4 physical ssds and 1 client |
+| 8     | lightbits_cluster_3x_target_small_1numa_6_phys_ssd_1x_client         | 4             | 3 small targets cluster with 6 physical ssds and 1 client |
+| 9     | observability                                                        | 1             | all in 1 observability VM                                 |
++-------+----------------------------------------------------------------------+---------------+-----------------------------------------------------------+
 ```
 
 Running the following command will deploy the VMs described by selected descriptor - `lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client`
@@ -273,7 +279,7 @@ lbprox allocations delete -a <allocation_id>
 ## TODO
 
 1. create sr-iov using:
-  
+
     and pass the nics to the VMs.
 
 2. enable ssd passthrough.
