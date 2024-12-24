@@ -303,7 +303,9 @@ By default the command will install lightbits by running lb-ansible from this lo
 lbprox allocations deploy lightbits \
   -a <allocation_id> \
   --base-url=https://pulp02/pulp/content/releases/lightbits/3.10.1/rhel/9/67/ \
-  -p <profile-name>
+  -p <profile-name> \
+  --ec-enabled \
+  --initial-device-count=4
 ```
 
 In order to deploy the initiator you can run the following command:

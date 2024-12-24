@@ -149,12 +149,16 @@ def deallocate_vms(ctx, storage_id, allocation_id=None, tags=None):
               help="should we stream the ansible output to stdout")
 @click.option('--ec-enabled/--no-ec-enabled', default=False,
               help="should we set ec")
+@click.option('-d', '--initial-device-count', default=4, type=int,
+              help="override the default number of devices to create")
 @click.pass_context
 def lightbits(ctx, allocation_id, base_url, profile_name, run_deploy,
-              stream_output=True, ec_enabled=False):
+              stream_output=True, ec_enabled=False,
+              initial_device_count=4):
     _deploy_lightbits_cluster(ctx.obj.pve, allocation_id,
                               base_url, profile_name,
-                              run_deploy, stream_output, ec_enabled)
+                              run_deploy, stream_output, ec_enabled,
+                              initial_device_count)
 
 
 @allocations_deploy_group.command("initiator")
@@ -274,7 +278,8 @@ def _extract_cluster_version(repo_base_url):
 def _generate_inventory(pve, allocation_id,
                         repo_base_url: str,
                         profile_name: str=None,
-                        ec_enabled: bool=False):
+                        ec_enabled: bool=False,
+                        initial_device_count: int=4):
     cluster_vms = utils.list_cluster_vms(pve,
                                          VMTags().set_role("target").set_allocation(allocation_id))
     logging.info(f"allocation {allocation_id} has {len(cluster_vms)} VMs with role.target tag")
@@ -298,6 +303,8 @@ def _generate_inventory(pve, allocation_id,
         tags.set_cluster_id(cluster_info["clusterId"])
         tags.set_version(_extract_cluster_version(repo_base_url))
         vm_ips = utils.get_vm_ip_address(pve, hostname, vmid)
+        data_ip = None
+        access_ip = None
         if len(vm_ips) == 0:
             raise RuntimeError("must have at least one data IP address")
         elif len(vm_ips) == 1:
@@ -338,6 +345,8 @@ def _generate_inventory(pve, allocation_id,
         hostname = vm.get('node')
         tags.set_cluster_id(cluster_info["clusterId"])
         vm_ips = utils.get_vm_ip_address(pve, hostname, vmid)
+        data_ip = None
+        access_ip = None
         if len(vm_ips) == 0:
             raise RuntimeError("must have at least one data IP address")
         elif len(vm_ips) == 1:
@@ -368,7 +377,8 @@ def _generate_inventory(pve, allocation_id,
     inventory_path = deploy.generate_inventory(allocation_id,
                                                cluster_info, initiators,
                                                repo_base_url, profile_name,
-                                               ec_enabled=ec_enabled)
+                                               ec_enabled=ec_enabled,
+                                               initial_device_count=initial_device_count)
     logging.info(f"Inventory files generated at: {inventory_path}")
     logging.info(f"""To deploy the cluster issue following commands:
 
@@ -380,9 +390,11 @@ def _generate_inventory(pve, allocation_id,
 
 def _deploy_lightbits_cluster(pve, allocation_id, base_url,
                               profile_name,
-                              run_deploy, stream_output, ec_enabled):
+                              run_deploy, stream_output, ec_enabled,
+                              initial_device_count):
     inventory_path = _generate_inventory(pve, allocation_id,
-                                         base_url, profile_name, ec_enabled)
+                                         base_url, profile_name, ec_enabled,
+                                         initial_device_count)
     if run_deploy:
         deploy.deploy_cluster(inventory_path, stream_output)
 

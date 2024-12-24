@@ -61,7 +61,7 @@ nodes:
     allowCrossNumaDevices: true
     deviceMatchers:
     - partition == false
-    initialDeviceCount: 4
+    initialDeviceCount: {{ data.initial_device_count }}
     maxDeviceCount: 12
   #data_ifaces:
   #- bootproto: static
@@ -136,7 +136,8 @@ def inventory_directory_exists(allocation_id: str):
 
 def generate_inventory(allocation_id: str, cluster_info, initiators,
                        repo_base_url: str, profile_name: str=None,
-                       ec_enabled: bool=False):
+                       ec_enabled: bool=False,
+                       initial_device_count: int=4):
     cluster_inventory_dir = inventory_directory(allocation_id)
     os.makedirs(cluster_inventory_dir, exist_ok=True)
 
@@ -174,7 +175,8 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
         data = {
             'profile_name': profile_name,
             'server': server_info,
-	    'ec_enabled': str(ec_enabled).lower()
+	        'ec_enabled': str(ec_enabled).lower(),
+            'initial_device_count': initial_device_count
         }
         host_file_path = os.path.join(host_vars_dir, f'{server_name}.yml')
         render_template(host_vars_template,
