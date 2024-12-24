@@ -187,6 +187,8 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
 def deploy_cluster(inventory_dir: str, stream_output: bool=True):
     cmd = "docker compose run --rm -i deploy"
     try:
+        if os.environ.get('WORKSPACE_TOP', None) is None:
+            raise Exception("WORKSPACE_TOP environment variable is not set")
         if stream_output:
             utils.run_cmd_stream_output(cmd, cwd=inventory_dir)
         else:
@@ -200,6 +202,8 @@ def deploy_cluster(inventory_dir: str, stream_output: bool=True):
 def deploy_nvme_initiator(inventory_dir: str, stream_output: bool=True):
     cmd = "docker compose run --rm -i deploy-initiator"
     try:
+        if os.environ.get('WORKSPACE_TOP', None) is None:
+            raise Exception("WORKSPACE_TOP environment variable is not set")
         if stream_output:
             utils.run_cmd_stream_output(cmd, cwd=inventory_dir)
         else:

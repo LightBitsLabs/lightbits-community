@@ -9,6 +9,7 @@ services:
     - GID=${GID}                   # (2) grp-id retrieved by `id -g`
     - UNAME=${UNAME}               # (3) username retrieved by `id -un`
     - DOCKER_GID=${DOCKER_GID}     # (4) set docker group id on host by `getent group docker | cut -d: -f3`
+    - WORKSPACE_TOP=${WORKSPACE_TOP:-""}
     volumes:
     - ${HOME}/.local/lbprox:${HOME}/.local/lbprox
     - ${HOME}/.ssh:${HOME}/.ssh
