@@ -142,7 +142,7 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
     os.makedirs(cluster_inventory_dir, exist_ok=True)
 
     context = {
-        'lb_ansible_img': 'lbdocker:5000/lb-ansible:v11.0.0',
+        'lb_ansible_img': 'lbdocker:5000/lb-ansible:v9.13.0',
     }
     render_template(docker_compose_template,
                     context,
