@@ -5,6 +5,7 @@ import subprocess
 import logging
 from lbprox.common import utils
 from lbprox.common.constants import INVENTORIES_DIR
+import getpass
 
 
 hosts_template = """
@@ -76,9 +77,9 @@ services:
     image: {{ data.lb_ansible_img }} # (1) update with real image path.
     network_mode: host
     environment:
-    - UID=1000      # (2) id retrieved by `id -u`
-    - GID=1000      # (3) grp-id retrieved by `id -g`
-    - UNAME=myuser  # (4) username retrieved by `id -un`
+    - UID={{ data.uid }}      # (2) id retrieved by `id -u`
+    - GID={{ data.gid }}      # (3) grp-id retrieved by `id -g`
+    - UNAME={{ data.uname }}  # (4) username retrieved by `id -un`
     - ANSIBLE_LOG_PATH=/inventory/logs/ansible.log
     - ANSIBLE_FORCE_COLOR=True
     working_dir: /ansible
@@ -143,6 +144,9 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
 
     context = {
         'lb_ansible_img': 'lbdocker:5000/lb-ansible:v9.13.0',
+        'uid': os.getuid(),
+        'gid': os.getgid(),
+        'uname': getpass.getuser(),
     }
     render_template(docker_compose_template,
                     context,
