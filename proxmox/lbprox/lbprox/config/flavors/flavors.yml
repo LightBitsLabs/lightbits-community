@@ -55,8 +55,7 @@ machine_types:
     name: target-small-1numa-large-emulated-ssd
     os_image: rocky-9-target
     properties:
-      <<: *single_numa_target_hardware
-      <<: *bridge_network_config
+      <<: [*single_numa_target_hardware, *bridge_network_config]
       base_memory: 20GB
       ssds:
         count: 6
@@ -67,8 +66,7 @@ machine_types:
     name: target-small-1numa-small-emulated-ssd
     os_image: rocky-9-target
     properties:
-      <<: *single_numa_target_hardware
-      <<: *bridge_network_config
+      <<: [*single_numa_target_hardware, *bridge_network_config]
       ssds:
         count: 4
         size: 2GB
@@ -78,8 +76,7 @@ machine_types:
     name: target-tiny-1numa-emulated-ssd
     os_image: rocky-9-target
     properties:
-      <<: *tiny_target_1numa_hardware
-      <<: *bridge_network_config
+      <<: [*tiny_target_1numa_hardware, *bridge_network_config]
       ssds:
         count: 4
         size: 1GB
@@ -89,8 +86,7 @@ machine_types:
     name: target-small-1numa-4-passthrough-ssd
     <<: *base_target
     properties:
-      <<: *small_target_1numa_4_passthrough_ssd_hardware
-      <<: *bridge_network_config
+      <<: [*small_target_1numa_4_passthrough_ssd_hardware, *bridge_network_config]
       ssds:
         count: 4
         type: passthrough
@@ -99,8 +95,7 @@ machine_types:
     name: target-small-1numa-6-passthrough-ssd
     <<: *base_target
     properties:
-      <<: *small_target_1numa_6_passthrough_ssd_hardware
-      <<: *bridge_network_config
+      <<: [*small_target_1numa_6_passthrough_ssd_hardware, *bridge_network_config]
       ssds:
         count: 6
         type: passthrough
