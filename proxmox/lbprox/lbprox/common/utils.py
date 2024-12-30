@@ -196,7 +196,19 @@ def wait_for_vm_status(pve, hostname, vmid, desired_status, tmo=60, interval=5):
             logging.error(f"failed to get status for {hostname}:{vmid}: type: {type(ex)} {ex}")
             time.sleep(interval)
             continue
-    logging.warn(f"timed out ({tmo}s) waiting for status {desired_status} on {hostname}:{vmid}")
+    logging.warning(f"timed out ({tmo}s) waiting for status {desired_status} on {hostname}:{vmid}")
+
+
+def get_disk_size(pve, hostname, vmid, disk_name):
+    vm_config = pve.nodes(hostname).qemu(vmid).config.get()
+    disk_info_list = vm_config[disk_name].split(',')
+    # disk_info_list looks like ['lb-local-storage:108/vm-108-disk-0.raw', 'discard=on', 'size=4G']
+    for disk_info in disk_info_list:
+        if disk_info.startswith("size="):
+            disk_size_str = disk_info.split('=')[1]
+            disk_size = convert_size_to_bytes(disk_size_str)
+            return disk_size
+    logging.warning(f"could not find disk_size for {hostname}:{vmid}:{disk_name} - {vm_config}")
 
 
 def get_storage_info(pve, hostname, storage_id):
@@ -219,7 +231,8 @@ def convert_size_to_bytes(size_str):
         int: The equivalent size in bytes.
     """
 
-    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4}
+    units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4,
+             'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4}
     match = re.match(r'(\d+)([A-Z]+)', size_str)
     if match:
         value, unit = match.groups()
@@ -278,7 +291,7 @@ def attached_pci_devices(pve, hostname):
                 time.sleep(2)
                 continue
             return vm_config
-    
+
     vms = pve.nodes(hostname).qemu.get()
     attached_devices = []
     pci_devices = list_pci_devices(pve, hostname)
@@ -306,7 +319,7 @@ def find_unattached_vfs(pve, hostname):
 
 def create_emulated_ssds(pve, hostname, vmid, storage_id, disk_count, size_in_bytes: int):
     """Create emulated SSDs for a VM.
-    
+
     content create API expects size in kilobytes.
     """
     format = "raw"

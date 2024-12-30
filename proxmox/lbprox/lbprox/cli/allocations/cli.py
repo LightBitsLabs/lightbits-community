@@ -19,6 +19,9 @@ from lbprox.snippets import ci_snippets
 from lbprox.deployment import deploy
 
 
+minimum_boot_disk_size = "15G"
+
+
 @click.group("allocations")
 def allocations_group():
     pass
@@ -203,7 +206,7 @@ def _create_vm_on_proxmox(pve, ssh_client: ssh.SSHClient,
             #ide2="none,media=cdrom",
             scsihw="virtio-scsi-pci",
             #scsihw="virtio-scsi-single",
-            virtio0=f"{storage_id}:0,import-from={os_image_path}",
+            virtio0=f"{storage_id}:0,import-from={os_image_path},discard=on",
             boot="order=virtio0;ide2;net0",
             citype="nocloud",
             ciuser="root",
@@ -253,6 +256,13 @@ def _create_vm_on_proxmox(pve, ssh_client: ssh.SSHClient,
                         break
                     logging.info(f"attaching SSD: {pci_device['id']} to VM: {vmid}")
                     pve.nodes(hostname).qemu(vmid).config.put(**{f"hostpci{i+1}": f"{pci_device['id']},pcie=0"})
+
+        # resize the boot disk if smaller then minimum_boot_disk_size
+        boot_disk_size = utils.get_disk_size(pve, hostname, vmid, "virtio0")
+        minimum_boot_disk_size_bytes = utils.convert_size_to_bytes(minimum_boot_disk_size)
+        if boot_disk_size < minimum_boot_disk_size_bytes:
+            logging.debug(f"resizing boot disk from {boot_disk_size} to {minimum_boot_disk_size}")
+            pve.nodes(hostname).qemu(vmid).resize.put(**{"disk": "virtio0", "size": minimum_boot_disk_size})
 
         logging.debug(f"created VM {vm_name} with vmid: {vmid}")
     except subprocess.CalledProcessError as ex:
