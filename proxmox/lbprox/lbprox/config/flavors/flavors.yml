@@ -127,10 +127,7 @@ machine_types:
     name: dms
     os_image: rocky-9-target
     properties:
+      <<: [*bridge_network_config]
       cores: 4
       base_memory: 12GB
       numa: 1
-      networks:
-      - name: net0
-        type: bridge
-        bridge: vmbr0
