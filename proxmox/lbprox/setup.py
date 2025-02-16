@@ -1,11 +1,13 @@
 from setuptools import setup
 
+__version__ = "0.0.0"
+
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
 setup(
     name='lbprox',
-    version='0.1.0',
+    version=__version__,
     install_requires=requirements,
     packages=['lbprox',
               'lbprox/ssh',
