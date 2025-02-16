@@ -40,11 +40,19 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
+build-image: HEAD_GIT_TAG=$(shell git tag --points-at HEAD)
 build-image: ## Build image
 	$(Q)docker build $(LABELS) -t $(IMG) .
+	$(Q)if [ -n "$(HEAD_GIT_TAG)" ]; then \
+		docker tag $(IMG) $(IMAGE_REGISTRY)/lbprox:$(HEAD_GIT_TAG); \
+	fi
 
+push-image: HEAD_GIT_TAG=$(shell git tag --points-at HEAD)
 push-image:  ## push image to registry
 	$(Q)docker push $(IMG)
+	$(Q)if [ -n "$(HEAD_GIT_TAG)" ]; then \
+		docker push $(IMAGE_REGISTRY)/lbprox:$(HEAD_GIT_TAG); \
+	fi
 
 docker-cmd := docker run --rm --privileged $(TTY) \
 	--net=host \
