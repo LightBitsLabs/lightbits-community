@@ -22,7 +22,6 @@ from lbprox.cli.allocations.cli import allocations_group
 from lbprox.cli.dashboard.cli import dashboard_group
 from lbprox.cli.prom_discovery.cli import prom_discovery_group
 from lbprox.common import constants
-from lbprox.ssh import ssh
 
 
 class AppContext(object):
@@ -32,20 +31,37 @@ class AppContext(object):
         self.username = username
         self.password = password
         self.config_file = config_file
-        with open(self.config_file, 'r') as f:
-            config = yaml.load(f.read(), Loader=yaml.FullLoader)
-        logging.debug(f"config:\n{config}")
-        self.pve, last_active_hostname = self.get_proxmox_api(config, username, password)
-        assert self.pve, f"failed to create Proxmox API object: {config}"
+        config_from_file = self.load_config(config_file)
+        if username is not None:
+            config_from_file["username"] = username
+        if password is not None:
+            config_from_file["password"] = password
+        self.config = config_from_file
+        logging.debug(f"loaded config from: {config_file} merged config: {self.config}")
+        if config_from_file.get("username", None) is None:
+            raise RuntimeError("username not provided")
+        if config_from_file.get("password", None) is None:
+            raise RuntimeError("password not provided")
+        self.pve, last_active_hostname = self.get_proxmox_api(self.config,
+                                                              self.config["username"],
+                                                              self.config["password"])
+        assert self.pve, f"failed to create Proxmox API object: {self.config}"
         # update last know active node
-        last_active = config.get("last_active", None)
+        last_active = self.config.get("last_active", None)
         if last_active is None or last_active != last_active_hostname:
-            config["last_active"] = last_active_hostname
-            with open(self.config_file, 'w') as f:
-                yaml.dump(config, f)
-        assert self.pve, f"failed to create Proxmox API object: {config}"
+            self.config["last_active"] = last_active_hostname
+            self.save_config(config_file, self.config)
+        assert self.pve, f"failed to create Proxmox API object: {self.config}"
         # self.ssh_client = ssh.SSHClient(last_active_hostname, "root", "light")
         # assert self.ssh_client, f"failed to create SSH client object: {last_active_hostname}"
+
+    def load_config(self, config_file):
+        with open(config_file, 'r', encoding='utf-8') as f:
+            return yaml.load(f.read(), Loader=yaml.FullLoader)
+
+    def save_config(self, config_file, config):
+        with open(config_file, 'w', encoding='utf-8') as f:
+            yaml.dump(config, f)
 
     def get_proxmox_api(self, config, username, password, timeout=15):
         # Create a Proxmox API object
@@ -53,8 +69,10 @@ class AppContext(object):
         if last_active:
             try:
                 urllib3.HTTPConnectionPool(last_active, maxsize=10, block=True)
-                pve = proxmox.ProxmoxAPI(last_active, user=f"{username}@pam",
-                                         password=password, verify_ssl=False,
+                pve = proxmox.ProxmoxAPI(host=last_active,
+                                         user=f"{username}@pam",
+                                         password=password,
+                                         verify_ssl=False,
                                          timeout=timeout)
                 return pve, last_active
             except Exception as ex:
@@ -64,8 +82,10 @@ class AppContext(object):
             hostname = node.get('hostname')
             try:
                 urllib3.HTTPConnectionPool(hostname, maxsize=10, block=True)
-                pve = proxmox.ProxmoxAPI(hostname, user=f"{username}@pam",
-                                         password=password, verify_ssl=False,
+                pve = proxmox.ProxmoxAPI(host=hostname,
+                                         user=f"{username}@pam",
+                                         password=password,
+                                         verify_ssl=False,
                                          timeout=timeout)
                 return pve, hostname
             except Exception as ex:
@@ -74,10 +94,16 @@ class AppContext(object):
 
 
 @click.group(name="proxmox")
-@click.option('-u', '--username', default="root", envvar='PROXMOX_USERNAME')
-@click.option('-p', '--password', default="light", hide_input=True, envvar='PROXMOX_PASSWORD')
+@click.option('-u', '--username',
+              envvar='LBPROX_USERNAME')
+@click.option('-p', '--password',
+              hide_input=True,
+              envvar='LBPROX_PASSWORD')
 @click.option('--debug/--no-debug', default=False, envvar='LBPROX_DEBUG')
-@click.option('-c', '--config-file', default=constants.DEFAULT_CONFIG_FILE, envvar='LBPROX_CONFIG',
+@click.option('-c', '--config-file',
+              type=click.Path(exists=True, dir_okay=False),
+              default=constants.DEFAULT_CONFIG_FILE,
+              envvar='LBPROX_CONFIG',
               help=f"config file to use (default: {constants.DEFAULT_CONFIG_FILE})")
 @click.pass_context
 def cli(ctx, username, password, debug, config_file):
@@ -98,9 +124,11 @@ def cli(ctx, username, password, debug, config_file):
         None
     """
     utils.basicConfig(debug)
-    if not os.path.exists(config_file):
-        raise RuntimeError(f"config file does not exist at {config_file}")
-    logging.debug(f"config_file: '{config_file}'")
+    if ctx.params['username'] is None:
+        logging.debug("username not provided.")
+
+    if ctx.params['password'] is None:
+        logging.debug("password not provided.")
     ctx.obj = AppContext(username, password, config_file, debug)
 
 

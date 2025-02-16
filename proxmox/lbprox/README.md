@@ -109,10 +109,12 @@ Initially you would need to create a config file stating the servers in proxmox 
 For example place the following file: `~/.local/lbprox/lbprox.yml`:
 
 ```yaml
+username: root
+password: light
+last_active: ""
 nodes:
 - hostname: rack16-server01
 - hostname: rack16-server02
-last_active: ""
 ```
 
 In order to deactivate from this environment just run the following command:
