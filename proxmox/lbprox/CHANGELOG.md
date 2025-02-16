@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.2.1 (2025-02-16)
+
+### Bug Fixes
+
+- **Makefile**: Push image with git-tag if git HEAD points to git-tag
+  ([`8dc9f4e`](https://github.com/LightBitsLabs/lightbits-community/commit/8dc9f4e2b2b9f1d616f87184727d4dd59ad812a5))
+
+
 ## v0.2.0 (2025-02-16)
 
 ### Features
