@@ -70,3 +70,6 @@ docker-enter: local-lbprox ## Enter image-builder shell.
 
 pylint:
 	$(Q)pylint lbprox
+
+release:
+	$(Q)semantic-release version
