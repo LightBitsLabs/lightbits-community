@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.2.0 (2025-02-16)
+
+### Features
+
+- Add support for python-semantic-release
+  ([`7ed7561`](https://github.com/LightBitsLabs/lightbits-community/commit/7ed75613793d01704ae2622062a9ca762a5ffd87))
+
+
 ## v0.1.0 (2025-02-16)
 
 
