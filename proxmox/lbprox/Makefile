@@ -1,8 +1,23 @@
-VERSION=v0.1.0
-IMAGE_REPOSITORY=lbdocker:5000
-IMG=$(IMAGE_REPOSITORY)/lbprox:$(VERSION)
+IMAGE_REGISTRY:=$(or $(IMAGE_REGISTRY),lbdocker:5000)
+
+override GIT_VER := $(or $(shell git describe --tags --abbrev=8 --always --long --dirty),UNKNOWN)
+override GIT_TAG := $(or $(shell git describe --tags),UNKNOWN)
+override IMG_TAG := $(or $(IMG_TAG),$(GIT_VER))
+IMG := $(IMAGE_REGISTRY)/lbprox:$(IMG_TAG)
 
 override BUILD_HOST := $(or $(BUILD_HOST),$(shell hostname))
+override BUILD_TIME := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+override WORKFLOW_ID := $(or $(WORKFLOW_ID),"UNKNOWN")
+
+
+override LABELS := \
+        --label org.opencontainers.image.title="lbprox" \
+        --label org.opencontainers.image.version="$(IMG_TAG)" \
+        --label org.opencontainers.image.description="command-line tools for managing VMs and running Lightbits cluster on Proxmox" \
+        --label org.opencontainers.image.authors="Lightbits Labs <support@lightbitslabs.com>" \
+        --label org.opencontainers.image.documentation="https://www.lightbitslabs.com/support/" \
+        --label org.opencontainers.image.revision=$(GIT_VER) \
+        --label org.opencontainers.image.created=$(BUILD_TIME)
 
 TTY=$(if $(shell [ -t 0 ] && echo 1),-it, )
 Q := $(if $(V), ,@)
@@ -26,7 +41,7 @@ help: ## Display this help.
 
 
 build-image: ## Build image
-	$(Q)docker build -t $(IMG) .
+	$(Q)docker build $(LABELS) -t $(IMG) .
 
 push-image:  ## push image to registry
 	$(Q)docker push $(IMG)
@@ -44,12 +59,13 @@ docker-cmd := docker run --rm --privileged $(TTY) \
 	-h $(BUILD_HOST) \
 	$(IMG) $(CMD)
 
-docker-run: ## Run lbprox cmd
+local-lbprox: ## Run lbprox cmd
 	$(Q)mkdir -p $(HOME)/.local/lbprox
+
+docker-run: local-lbprox ## Run lbprox cmd
 	$(Q)${docker-cmd} lbprox $(ARGS)
 
-docker-enter: ## Enter image-builder shell.
-	$(Q)mkdir -p $(HOME)/.local/lbprox
+docker-enter: local-lbprox ## Enter image-builder shell.
 	$(Q)${docker-cmd} bash
 
 pylint:
