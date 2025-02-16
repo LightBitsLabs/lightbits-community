@@ -212,12 +212,26 @@ def get_disk_size(pve, hostname, vmid, disk_name):
 
 
 def get_storage_info(pve, hostname, storage_id):
+    is_valid, node_names = is_valid_hostname(pve, hostname)
+    if not is_valid:
+        raise RuntimeError(f"hostname: '{hostname}' is not a valid Proxmox node. Must be one of {node_names}")
+
     try:
         storage_list = pve.nodes(hostname).storage.get()
         return any([storage.get('storage') == storage_id for storage in storage_list])
     except Exception as ex:
         logging.error(f"failed to get storage info {hostname}:{storage_id} : {ex}")
         return False
+
+
+# check if the hostname is a valid Proxmox node name in the Proxmox data-center
+def is_valid_hostname(pve, hostname):
+    node_list = pve.nodes().get()
+    node_names = [node['node'] for node in node_list]
+    for node_name in node_names:
+        if hostname == node_name:
+            return True, node_names
+    return False, node_names
 
 
 def convert_size_to_bytes(size_str):

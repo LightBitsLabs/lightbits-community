@@ -140,7 +140,6 @@ Wipe the disk and create a new partition with ext4 on it and will add it as a st
 
 ```bash
 lbprox image-store create rack16-server01 -s lb-local-storage -d /dev/nvme0n1
-
 ```
 
 Now we need to pull the lightbits basic image to install:
@@ -173,7 +172,7 @@ lbprox os-images delete --volid lb-local-storage:iso/ubuntu-24.04-initiator.img
 If we want to reverse this process and clean everything up we should run the following:
 
 ```bash
-lbprox image-store delete rack16-server01 -s lb-local-storage
+lbprox image-store delete -s lb-local-storage
 ```
 
 ### Open VFs
@@ -212,7 +211,7 @@ lbprox --debug data-network create --zone-name=data0
 In order to delete this network and all other resources related you can run the following command:
 
 ```bash
-lbprox data-network delete rack16-server01 --zone-name=data0
+lbprox data-network delete --zone-name=data0
 ```
 
 ## Day-To-Day Operations
@@ -281,8 +280,16 @@ lbprox allocations list descriptors
 Running the following command will deploy the VMs described by selected descriptor - `lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client`
 
 ```bash
-lbprox allocations create rack16-server01 -n lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client
+lbprox allocations create <PROXMOX_NODE_NAME> -n lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client
 ```
+
+> **NOTE:**
+>
+> Hostname must match the Proxmox `node-name` that appears under Datacenter in Proxmox. Fox example, in the following screenshot the hostname must match `pxmx-cl6`.
+>
+> Don't use IP address of the node.
+>
+> ![alt text](image.png)
 
 > **NOTE:**
 >

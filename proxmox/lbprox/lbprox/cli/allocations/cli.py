@@ -191,6 +191,11 @@ def _create_vm_on_proxmox(pve, ssh_client: ssh.SSHClient,
         memory_bytes = utils.convert_size_to_bytes(machine_info['properties']['base_memory'])
         memory_mb = memory_bytes // 1024**2 # convert to MB
         cores = machine_info['properties']['cores']
+
+        is_valid, node_names = utils.is_valid_hostname(pve, hostname)
+        if not is_valid:
+            raise RuntimeError(f"hostname: '{hostname}' is not a valid Proxmox node. Must be one of {node_names}")
+
         # Create the VM
         vm = pve.nodes(hostname).qemu.create(
             vmid=vmid,
