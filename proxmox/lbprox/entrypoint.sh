@@ -24,7 +24,7 @@ if [ -z "$FUID" ] ; then
   # add group
   addgroup -g $GID -S $UNAME
   adduser  -s /bin/bash -u $UID -D -S $UNAME -G $UNAME
-  echo "$UNAME:light" | chpasswd 2>&1 > /dev/null
+  echo "$UNAME:light" | chpasswd > /dev/null 2>&1
   mkdir -p /etc/sudoers.d
   echo "$UNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$UNAME
   chmod 0440 /etc/sudoers.d/*
