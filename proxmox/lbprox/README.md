@@ -83,12 +83,6 @@ nodes:
 - hostname: rack16-server02
 ```
 
-In order to deactivate from this environment just run the following command:
-
-```bash
-deactivate
-```
-
 ## Initial Proxmox Nodes Setup
 
 ### Storage setup
@@ -344,7 +338,11 @@ Now you can run the following command to get the help output:
 ```bash
 lbprox --help
 ```
+In order to deactivate from this environment just run the following command:
 
+```bash
+deactivate
+```
 </details>
 
 ## TODO
