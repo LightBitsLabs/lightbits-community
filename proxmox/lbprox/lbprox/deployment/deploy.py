@@ -143,7 +143,7 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
     os.makedirs(cluster_inventory_dir, exist_ok=True)
 
     context = {
-        'lb_ansible_img': 'lbdocker:5000/lb-ansible:v9.13.0',
+        'lb_ansible_img': 'docker.lightbitslabs.com/lbprox/lb-ansible:v9.13.0',
         'uid': os.getuid(),
         'gid': os.getgid(),
         'uname': getpass.getuser(),
