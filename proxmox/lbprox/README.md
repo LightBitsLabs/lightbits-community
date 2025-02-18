@@ -161,6 +161,8 @@ In order to provide isolation, and DHCP inside each Proxmox node we can utilize 
 >
 > ```bash
 > apt install dnsmasq -y
+> NOTE: Now there are 2 dnsmasq services - dnsmasq and dnsmasq@<network_name> - we should disable the default one. (`network_name` is data0 in our example)
+> systemctl disable dnsmasq.service
 > ```
 
 Following command will deploy on all nodes the same DHCP server with the same IPAM configuration that will
