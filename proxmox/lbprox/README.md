@@ -160,7 +160,10 @@ In order to provide isolation, and DHCP inside each Proxmox node we can utilize 
 > install `dnsmasq` on each proxmox node to get this functionality using:
 >
 > ```bash
+> apt update -y
 > apt install dnsmasq -y
+> NOTE: Now there are 2 dnsmasq services - dnsmasq and dnsmasq@<network_name> - we should disable the default one. (`network_name` is data0 in our example)
+> systemctl disable dnsmasq.service
 > ```
 
 Following command will deploy on all nodes the same DHCP server with the same IPAM configuration that will
@@ -356,4 +359,6 @@ deactivate
 
     and pass the nics to the VMs.
 
-2. enable ssd passthrough.
+2. Enable ssd passthrough.
+3. Add support for upload image from file - in `_create_os_image` we need an option to upload an os-image from file (sometimes we don't have a URL to download from)
+4. Add instructions during installation, don't create `local-lvm` Thin-LVM if you don't have additional SSD on the Proxmox machine, or post install we should add a command to replace the `local-lvm` thin provisioned.
