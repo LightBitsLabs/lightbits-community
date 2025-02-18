@@ -11,7 +11,7 @@ def os_images_group():
 
 # look at: https://pve.proxmox.com/pve-docs/api-viewer/index.html#/nodes/{node}/storage/{storage}/download-url
 @os_images_group.command("create")
-@click.option('--storage-id', required=False, default="lb-local-storage",
+@click.option('-s', '--storage-id', required=False, default="lb-local-storage",
               help="storage ID to save the image to")
 @click.option('-u', '--url', required=True, help="URL to the image file")
 @click.option('--nodes', multiple=True, default=None,
@@ -22,7 +22,7 @@ def create_os_image(ctx, storage_id, url, nodes):
 
 
 @os_images_group.command("delete")
-@click.option('--storage-id', required=False, default="lb-local-storage",
+@click.option('-s', '--storage-id', required=False, default="lb-local-storage",
               help="storage ID to save the image to")
 @click.option('--volid', required=True, help="format: {storage_id}:{format}/{name}")
 @click.option('--nodes', multiple=True, default=None,
