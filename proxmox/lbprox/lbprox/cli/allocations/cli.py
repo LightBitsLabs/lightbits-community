@@ -116,8 +116,8 @@ def create_vms(ctx, hostname, storage_id, allocation_descriptor_name,
                                hostname, storage_id,
                                allocation_descriptor_name,
                                start_vm, tags, wait_for_ip,
-                               ssh_username=ctx.obj.username,
-                               ssh_password=ctx.obj.password)
+                               ssh_username=ctx.obj.config["username"],
+                               ssh_password=ctx.obj.config["password"])
     if cluster_vms:
         print(json.dumps(cluster_vms, indent=2))
 
@@ -136,7 +136,10 @@ def deallocate_vms(ctx, storage_id, allocation_id=None, tags=None):
         tags = VMTags.parse_tags(tags)
     else:
         tags = VMTags().set_allocation(allocation_id)
-    _delete_allocations(ctx.obj.pve, storage_id, ctx.obj.username, ctx.obj.password, tags)
+    _delete_allocations(ctx.obj.pve, storage_id,
+                        ctx.obj.config["username"],
+                        ctx.obj.config["password"],
+                        tags)
 
 
 
@@ -158,7 +161,7 @@ def deallocate_vms(ctx, storage_id, allocation_id=None, tags=None):
 def lightbits(ctx, allocation_id, base_url, profile_name, run_deploy,
               stream_output=True, ec_enabled=False,
               initial_device_count=4):
-    _deploy_lightbits_cluster(ctx.obj.pve, allocation_id,
+    _deploy_lightbits_cluster(ctx, allocation_id,
                               base_url, profile_name,
                               run_deploy, stream_output, ec_enabled,
                               initial_device_count)
@@ -290,12 +293,12 @@ def _extract_cluster_version(repo_base_url):
     return match.group(1)
 
 
-def _generate_inventory(pve, allocation_id,
+def _generate_inventory(ctx, allocation_id,
                         repo_base_url: str,
                         profile_name: str=None,
                         ec_enabled: bool=False,
                         initial_device_count: int=4):
-    cluster_vms = utils.list_cluster_vms(pve,
+    cluster_vms = utils.list_cluster_vms(ctx.obj.pve,
                                          VMTags().set_role("target").set_allocation(allocation_id))
     logging.info(f"allocation {allocation_id} has {len(cluster_vms)} VMs with role.target tag")
 
@@ -317,7 +320,7 @@ def _generate_inventory(pve, allocation_id,
         hostname = vm.get('node')
         tags.set_cluster_id(cluster_info["clusterId"])
         tags.set_version(_extract_cluster_version(repo_base_url))
-        vm_ips = utils.get_vm_ip_address(pve, hostname, vmid)
+        vm_ips = utils.get_vm_ip_address(ctx.obj.pve, hostname, vmid)
         data_ip = None
         access_ip = None
         if len(vm_ips) == 0:
@@ -347,9 +350,9 @@ def _generate_inventory(pve, allocation_id,
             "tags": tags.str(),
         }
         if tags.str() != vm.get('tags', ""):
-            pve.nodes(hostname).qemu(vmid).config.put(tags=tags.str())
+            ctx.obj.pve.nodes(hostname).qemu(vmid).config.put(tags=tags.str())
 
-    initiator_vms = utils.list_cluster_vms(pve,
+    initiator_vms = utils.list_cluster_vms(ctx.obj.pve,
                                            VMTags().set_role("initiator").set_allocation(allocation_id))
     logging.info(f"allocation {allocation_id} has {len(initiator_vms)} VMs with role.initiator tag")
     initiators = {}
@@ -359,7 +362,7 @@ def _generate_inventory(pve, allocation_id,
         vmid = vm.get('vmid')
         hostname = vm.get('node')
         tags.set_cluster_id(cluster_info["clusterId"])
-        vm_ips = utils.get_vm_ip_address(pve, hostname, vmid)
+        vm_ips = utils.get_vm_ip_address(ctx.obj.pve, hostname, vmid)
         data_ip = None
         access_ip = None
         if len(vm_ips) == 0:
@@ -387,15 +390,16 @@ def _generate_inventory(pve, allocation_id,
             "tags": tags.str(),
         }
         if tags.str() != vm.get('tags', ""):
-            pve.nodes(hostname).qemu(vmid).config.put(tags=tags.str())
+            ctx.obj.pve.nodes(hostname).qemu(vmid).config.put(tags=tags.str())
 
     inventory_path = deploy.generate_inventory(allocation_id,
                                                cluster_info, initiators,
                                                repo_base_url, profile_name,
                                                ec_enabled=ec_enabled,
-                                               initial_device_count=initial_device_count)
-    logging.info(f"Inventory files generated at: {inventory_path}")
-    logging.info(f"""To deploy the cluster issue following commands:
+                                               initial_device_count=initial_device_count,
+                                               light_app_path=ctx.obj.config["light_app_path"])
+    logging.info(f"""Inventory files generated at: {inventory_path}
+To deploy the cluster issue following commands:
 
     cd {inventory_path}
     docker compose run --rm -i deploy
@@ -403,19 +407,19 @@ def _generate_inventory(pve, allocation_id,
     return inventory_path
 
 
-def _deploy_lightbits_cluster(pve, allocation_id, base_url,
+def _deploy_lightbits_cluster(ctx, allocation_id, base_url,
                               profile_name,
                               run_deploy, stream_output, ec_enabled,
                               initial_device_count):
-    inventory_path = _generate_inventory(pve, allocation_id,
+    inventory_path = _generate_inventory(ctx, allocation_id,
                                          base_url, profile_name, ec_enabled,
                                          initial_device_count)
     if run_deploy:
         deploy.deploy_cluster(inventory_path, stream_output)
 
 
-def _deploy_nvme_initiator(pve, allocation_id, base_url, run_deploy, stream_output=None):
-    inventory_path = _generate_inventory(pve, allocation_id, base_url)
+def _deploy_nvme_initiator(ctx, allocation_id, base_url, run_deploy, stream_output=None):
+    inventory_path = _generate_inventory(ctx, allocation_id, base_url)
     if run_deploy:
         deploy.deploy_nvme_initiator(inventory_path, stream_output)
 

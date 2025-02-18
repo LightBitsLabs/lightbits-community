@@ -34,17 +34,24 @@ class AppContext(object):
             config_from_file["username"] = username
         if password is not None:
             config_from_file["password"] = password
+        config_from_file["debug"] = debug
+        if config_from_file.get("light_app_path", None) is None:
+            workspace_top = os.environ.get("WORKSPACE_TOP", None)
+            assert workspace_top,\
+                "light_app_path not provided, please provide it in the config file or as an environment variable: WORKSPACE_TOP"
+            light_app_path = os.path.join(workspace_top, "light-app")
+            assert os.path.exists(light_app_path), \
+                f"light-app path does not exist: '{light_app_path}'."\
+                " Please provide it in the config file or as an environment variable: WORKSPACE_TOP"
+            config_from_file["light_app_path"] = light_app_path
+        assert config_from_file.get("username", None),\
+            "username not provided, please provide it in the config file or as a command line argument"
+        assert config_from_file.get("password", None),\
+            "password not provided, please provide it in the config file or as a command line argument"
+
         self.config = config_from_file
         logging.debug(f"loaded config from: {config_file} merged config: {self.config}")
-        if config_from_file.get("username", None) is None:
-            raise RuntimeError("username not provided, please provide it in the config file or as a command line argument")
-        if config_from_file.get("password", None) is None:
-            raise RuntimeError("password not provided, please provide it in the config file or as a command line argument")
-        self.username = config_from_file["username"]
-        self.password = config_from_file["password"]
-        self.pve, last_active_hostname = self.get_proxmox_api(self.config,
-                                                              self.config["username"],
-                                                              self.config["password"])
+        self.pve, last_active_hostname = self.get_proxmox_api(self.config)
         assert self.pve, f"failed to create Proxmox API object: {self.config}"
         # update last know active node
         last_active = self.config.get("last_active", None)
@@ -63,15 +70,15 @@ class AppContext(object):
         with open(config_file, 'w', encoding='utf-8') as f:
             yaml.dump(config, f)
 
-    def get_proxmox_api(self, config, username, password, timeout=15):
+    def get_proxmox_api(self, config, timeout=15):
         # Create a Proxmox API object
         last_active = config.get("last_active", None)
         if last_active:
             try:
                 urllib3.HTTPConnectionPool(last_active, maxsize=10, block=True)
                 pve = proxmox.ProxmoxAPI(host=last_active,
-                                         user=f"{username}@pam",
-                                         password=password,
+                                         user=f"{config['username']}@pam",
+                                         password=config['password'],
                                          verify_ssl=False,
                                          timeout=timeout)
                 return pve, last_active
@@ -83,8 +90,8 @@ class AppContext(object):
             try:
                 urllib3.HTTPConnectionPool(hostname, maxsize=10, block=True)
                 pve = proxmox.ProxmoxAPI(host=hostname,
-                                         user=f"{username}@pam",
-                                         password=password,
+                                         user=f"{config['username']}@pam",
+                                         password=config['password'],
                                          verify_ssl=False,
                                          timeout=timeout)
                 return pve, hostname
