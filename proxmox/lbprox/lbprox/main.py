@@ -28,8 +28,6 @@ class AppContext(object):
     def __init__(self, username: str, password: str,
                  config_file: str, debug: bool=False):
         self.debug = debug
-        self.username = username
-        self.password = password
         self.config_file = config_file
         config_from_file = self.load_config(config_file)
         if username is not None:
@@ -39,9 +37,11 @@ class AppContext(object):
         self.config = config_from_file
         logging.debug(f"loaded config from: {config_file} merged config: {self.config}")
         if config_from_file.get("username", None) is None:
-            raise RuntimeError("username not provided")
+            raise RuntimeError("username not provided, please provide it in the config file or as a command line argument")
         if config_from_file.get("password", None) is None:
-            raise RuntimeError("password not provided")
+            raise RuntimeError("password not provided, please provide it in the config file or as a command line argument")
+        self.username = config_from_file["username"]
+        self.password = config_from_file["password"]
         self.pve, last_active_hostname = self.get_proxmox_api(self.config,
                                                               self.config["username"],
                                                               self.config["password"])
