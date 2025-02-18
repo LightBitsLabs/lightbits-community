@@ -3,7 +3,6 @@
 - [lbprox Guide](#lbprox-guide)
   - [`lbprox` Installation](#lbprox-installation)
     - [Install `lbprox` Using docker compose (Recommended)](#install-lbprox-using-docker-compose-recommended)
-    - [Install `lbprox` python package in virtual-environment](#install-lbprox-python-package-in-virtual-environment)
   - [Setup workdir for lbprox cli](#setup-workdir-for-lbprox-cli)
   - [Initial Proxmox Nodes Setup](#initial-proxmox-nodes-setup)
     - [Storage setup](#storage-setup)
@@ -14,6 +13,7 @@
     - [Install Lightbits On VMs](#install-lightbits-on-vms)
     - [Query cluster resources](#query-cluster-resources)
     - [Delete Everything](#delete-everything)
+    - [Install `lbprox` python package in virtual-environment](#install-lbprox-python-package-in-virtual-environment)
   - [TODO](#todo)
 
 ## `lbprox` Installation
@@ -53,41 +53,6 @@ set -e -u
 docker compose -f `pwd`/docker-compose.yml run -it --rm lbprox lbprox "\$@"
 EOF
 chmod +x ~/.local/bin/lbprox
-```
-
-Now you can run the following command to get the help output:
-
-```bash
-lbprox --help
-```
-
-### Install `lbprox` python package in virtual-environment
-
-`lbprox` is a python package that is recommended to be installed in virtual environment.
-
-In order to setup virtual environment. The following commands will install venv if not
-already installed on your system, and will create a virtual-environment under `.venv`
-folder. It will also activate this virtual environment, and all installations will
-be placed at this env.
-
-```bash
-sudo apt install python3-venv
-cd lbprox
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Now we want to install the `lbprox` package with all it's dependencies. Following
-command will install this package:
-
-> `NOTE:`
->
-> `-e` state that we install this package in edit mode (for dev purposes) so if we
-> change the source code it will apply to the installed command line immediately without
-> needing to reinstall the package.
-
-```bash
-pip install -e .
 ```
 
 Now you can run the following command to get the help output:
@@ -338,6 +303,46 @@ Delete VMs one by one:
 ```bash
 lbprox allocations delete -a <allocation_id>
 ```
+
+### Install `lbprox` python package in virtual-environment
+
+<details>
+<summary>Expand...</summary>
+
+`lbprox` is a python package that is recommended to be installed in virtual environment.
+
+In order to setup virtual environment. The following commands will install venv if not
+already installed on your system, and will create a virtual-environment under `.venv`
+folder. It will also activate this virtual environment, and all installations will
+be placed at this env.
+
+```bash
+sudo apt install python3-venv
+cd lbprox
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Now we want to install the `lbprox` package with all it's dependencies. Following
+command will install this package:
+
+> `NOTE:`
+>
+> `-e` state that we install this package in edit mode (for dev purposes) so if we
+> change the source code it will apply to the installed command line immediately without
+> needing to reinstall the package.
+
+```bash
+pip install -e .
+```
+
+Now you can run the following command to get the help output:
+
+```bash
+lbprox --help
+```
+
+</details>
 
 ## TODO
 
