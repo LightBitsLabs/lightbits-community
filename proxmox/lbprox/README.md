@@ -82,6 +82,7 @@ For example place the following file: `~/.local/lbprox/lbprox.yml`:
 ```yaml
 username: root
 password: light
+light_app_path: ""
 last_active: ""
 nodes:
 - hostname: rack16-server01

@@ -84,7 +84,7 @@ services:
     - ANSIBLE_FORCE_COLOR=True
     working_dir: /ansible
     volumes:
-    - ${WORKSPACE_TOP}/light-app:/ansible # (5) contains ansible-playbook and roles
+    - {{ data.light_app_path }}:/ansible # (5) contains ansible-playbook and roles
     - ./:/inventory # (6) contains group_vars, host vars and hosts.
 
   deploy:
@@ -138,19 +138,22 @@ def inventory_directory_exists(allocation_id: str):
 def generate_inventory(allocation_id: str, cluster_info, initiators,
                        repo_base_url: str, profile_name: str=None,
                        ec_enabled: bool=False,
-                       initial_device_count: int=4):
+                       initial_device_count: int=4,
+                       light_app_path: str=None):
     cluster_inventory_dir = inventory_directory(allocation_id)
     os.makedirs(cluster_inventory_dir, exist_ok=True)
 
-    context = {
+    compose_render_context = {
         'lb_ansible_img': 'docker.lightbitslabs.com/lbprox/lb-ansible:v9.13.0',
         'uid': os.getuid(),
         'gid': os.getgid(),
         'uname': getpass.getuser(),
+        'light_app_path': light_app_path,
     }
+    docker_compose_path = os.path.join(cluster_inventory_dir, 'docker-compose.yml')
     render_template(docker_compose_template,
-                    context,
-                    os.path.join(cluster_inventory_dir, 'docker-compose.yml'))
+                    compose_render_context,
+                    docker_compose_path)
 
     hosts_path = os.path.join(cluster_inventory_dir, 'hosts')
     data = {
