@@ -3,7 +3,6 @@
 - [lbprox Guide](#lbprox-guide)
   - [`lbprox` Installation](#lbprox-installation)
     - [Install `lbprox` Using docker compose (Recommended)](#install-lbprox-using-docker-compose-recommended)
-    - [Install `lbprox` python package in virtual-environment](#install-lbprox-python-package-in-virtual-environment)
   - [Setup workdir for lbprox cli](#setup-workdir-for-lbprox-cli)
   - [Initial Proxmox Nodes Setup](#initial-proxmox-nodes-setup)
     - [Storage setup](#storage-setup)
@@ -14,28 +13,35 @@
     - [Install Lightbits On VMs](#install-lightbits-on-vms)
     - [Query cluster resources](#query-cluster-resources)
     - [Delete Everything](#delete-everything)
+    - [Install `lbprox` python package in virtual-environment](#install-lbprox-python-package-in-virtual-environment)
   - [TODO](#todo)
 
 ## `lbprox` Installation
 
 ### Install `lbprox` Using docker compose (Recommended)
 
-Install `docker` and `docker compose` followng these [instructions](https://docs.docker.com/engine/install/) (choose your OS accordingly).
+Install `docker` and `docker compose` following these [instructions](https://docs.docker.com/engine/install/) (choose your OS accordingly).
 
-First, clone the project:
+Clone the `lightbits-community` project:
 
 ```bash
 git clone https://github.com/LightBitsLabs/lightbits-community.git
-cd lightbits-community/proxmox/lbprox
+```
+
+Define the following environment variable, specifying the lbprox image version:
+
+```bash
+export LB_PROX_VERSION=v0.2.1
 ```
 
 Next, create a `.env` file that would contain some of the env-vars we need for compose.
 
-Issue following command from `lightbits-community/proxmox/lbprox` to generate `.env` file and populate it with relevant fields:
+Issue following commands from to generate `.env` file and populate it with relevant fields:
 
 ```bash
+cd lightbits-community/proxmox/lbprox
 cat <<EOF > .env
-LBPROX_IMG=lbdocker:5000/lbprox:v0.1.0
+LBPROX_IMG=lbdocker:5000/lbprox:${LB_PROX_VERSION}
 UID=$(id -u)
 GID=$(id -g)
 UNAME=$(whoami)
@@ -53,41 +59,6 @@ set -e -u
 docker compose -f `pwd`/docker-compose.yml run -it --rm lbprox lbprox "\$@"
 EOF
 chmod +x ~/.local/bin/lbprox
-```
-
-Now you can run the following command to get the help output:
-
-```bash
-lbprox --help
-```
-
-### Install `lbprox` python package in virtual-environment
-
-`lbprox` is a python package that is recommended to be installed in virtual environment.
-
-In order to setup virtual environment. The following commands will install venv if not
-already installed on your system, and will create a virtual-environment under `.venv`
-folder. It will also activate this virtual environment, and all installations will
-be placed at this env.
-
-```bash
-sudo apt install python3-venv
-cd lbprox
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Now we want to install the `lbprox` package with all it's dependencies. Following
-command will install this package:
-
-> `NOTE:`
->
-> `-e` state that we install this package in edit mode (for dev purposes) so if we
-> change the source code it will apply to the installed command line immediately without
-> needing to reinstall the package.
-
-```bash
-pip install -e .
 ```
 
 Now you can run the following command to get the help output:
@@ -115,12 +86,6 @@ last_active: ""
 nodes:
 - hostname: rack16-server01
 - hostname: rack16-server02
-```
-
-In order to deactivate from this environment just run the following command:
-
-```bash
-deactivate
 ```
 
 ## Initial Proxmox Nodes Setup
@@ -320,7 +285,7 @@ lbprox allocations deploy lightbits \
 In order to deploy the initiator you can run the following command:
 
 ```bash
-lbprox allocations deploy nvme-initiator \
+lbprox allocations deploy initiator \
   -a <allocation_id> \
   --base-url=https://pulp02/pulp/content/releases/lightbits/3.10.1/rhel/9/67/
 ```
@@ -338,6 +303,52 @@ Delete VMs one by one:
 ```bash
 lbprox allocations delete -a <allocation_id>
 ```
+
+### Install `lbprox` python package in virtual-environment
+
+<details>
+<summary>Expand...</summary>
+
+`lbprox` is a python package that is recommended to be installed in virtual environment.
+
+In order to setup virtual environment. The following commands will install venv if not
+already installed on your system, and will create a virtual-environment under `.venv`
+folder. It will also activate this virtual environment, and all installations will
+be placed at this env.
+
+```bash
+sudo apt install python3-venv
+cd lbprox
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Now we want to install the `lbprox` package with all it's dependencies. Following
+command will install this package:
+
+> `NOTE:`
+>
+> `-e` state that we install this package in edit mode (for dev purposes) so if we
+> change the source code it will apply to the installed command line immediately without
+> needing to reinstall the package.
+
+```bash
+pip install -e .
+```
+
+Now you can run the following command to get the help output:
+
+```bash
+lbprox --help
+```
+
+In order to deactivate from this environment just run the following command:
+
+```bash
+deactivate
+```
+
+</details>
 
 ## TODO
 
