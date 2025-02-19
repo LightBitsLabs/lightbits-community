@@ -53,21 +53,17 @@ def delete_image_storage(ctx, storage_id):
 
 
 # look at POST https://pve.proxmox.com/pve-docs/api-viewer/index.html#/nodes/{node}/disks/directory
-def _create_image_storage(pve, hostname, storage_id, block_device):
-    if utils.get_storage_info(pve, hostname, storage_id): # storage already exists
+def _create_image_storage(pve, nodename, storage_id, block_device):
+    if utils.get_storage_info(pve, nodename, storage_id): # storage already exists
         return
-    node_list = pve.nodes().get()
+    disks = pve.nodes(nodename).disks().list().get()
+    devpaths = [disk.get('devpath') for disk in disks]
+    if block_device not in devpaths:
+        raise ValueError(f"block device {block_device} does not exist on node {nodename}, exists: {devpaths}")
 
-    for node in node_list:
-        disks = pve.nodes(node['node']).disks().list().get()
-        devpaths = [disk.get('devpath') for disk in disks]
-        if block_device not in devpaths:
-            raise ValueError(f"block device {block_device} does not exist on node {node['node']}, exists: {devpaths}")
-
-    for node in node_list:
-        pve.nodes(node['node']).disks().directory.post(name=storage_id,
-                                                       device=block_device,
-                                                       filesystem="ext4")
+    pve.nodes(nodename).disks().directory.post(name=storage_id,
+                                                    device=block_device,
+                                                    filesystem="ext4")
 
     storage_path = utils.get_storage_path(storage_id)
     pve.storage().create(storage=storage_id, path=storage_path,
@@ -86,6 +82,3 @@ def _delete_image_storage(pve, storage_id):
                 logging.debug(f"deleting storage {storage_id} on node {node_name}")
                 break
     pve.storage(storage_id).delete()
-    
-
-
