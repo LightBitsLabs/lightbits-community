@@ -1,6 +1,54 @@
 # CHANGELOG
 
 
+## v0.3.0 (2025-02-19)
+
+### Bug Fixes
+
+- Add -s short option
+  ([`97695c9`](https://github.com/LightBitsLabs/lightbits-community/commit/97695c93117b09effd64408c57e870b3349f3c51))
+
+- Create-image should work only on one nodename - given as required arg
+  ([`8400dfe`](https://github.com/LightBitsLabs/lightbits-community/commit/8400dfe684273befdc64af53ba8236074b46220d))
+
+- Git_tag target
+  ([`49fdbaa`](https://github.com/LightBitsLabs/lightbits-community/commit/49fdbaab76b2892a39a88c840c7cf4f74f76fd67))
+
+- Propagation of user/pass from file/variable
+  ([`bc55650`](https://github.com/LightBitsLabs/lightbits-community/commit/bc55650d416514f4735b4255e3f75c4e0cf73abc))
+
+### Chores
+
+- Add scripts/pull-tag-push.sh to deploy container-images and os-images
+  ([`009f50e`](https://github.com/LightBitsLabs/lightbits-community/commit/009f50ef26d54e903477ebc0650e9173f0df7275))
+
+- Makefile add print-* target
+  ([`b0f60b7`](https://github.com/LightBitsLabs/lightbits-community/commit/b0f60b7592f97caff0b09998403a313711bef473))
+
+- Update lb-ansible image to cloudsmith public lbprox repo
+  ([`2a78791`](https://github.com/LightBitsLabs/lightbits-community/commit/2a787910fa36666400773243e4177ecfbc13a22a))
+
+### Documentation
+
+- Document that we need to disable dnsmasq.service
+  ([`96a0f53`](https://github.com/LightBitsLabs/lightbits-community/commit/96a0f5362d90018ccf08362d2a01569db210c2a7))
+
+- **README.md**: Hide python package installation.
+  ([`f67f8b4`](https://github.com/LightBitsLabs/lightbits-community/commit/f67f8b49f39b3b1da2a8959e09e3cb989a44d616))
+
+### Features
+
+- Add light_app_path var to lbprox.yaml
+  ([`b0c3daf`](https://github.com/LightBitsLabs/lightbits-community/commit/b0c3daf839e4855162d2d2442adaacbea2c39877))
+
+till now we counted on WORKSPACE_TOP env var. in a world outside the lab we don't have WORKSPACE_TOP
+  so the user must provide this path to the expanded light-app directory where we can find the
+  ansible playbook and roles.
+
+if not provided we will try to look for WORKSPACE_TOP/light-app if not provided we will fail with a
+  clear error msg.
+
+
 ## v0.2.1 (2025-02-16)
 
 ### Bug Fixes
