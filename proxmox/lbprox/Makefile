@@ -81,3 +81,6 @@ pylint:
 
 release:
 	$(Q)semantic-release version
+
+print-% : ## print the variable name to stdout
+	@echo $($*)
