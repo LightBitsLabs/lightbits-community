@@ -118,11 +118,11 @@ Now we need to pull the lightbits basic image to install:
 > You can specify specific target nodes using the multiple --node/-n flag:
 
 ```bash
-lbprox os-images create -u https://pulp03.lab.lightbitslabs.com/pulp/content/rocky-9-target/qcow2/latest/rocky-9-target.qcow2
+lbprox os-images create -u https://dl.lightbitslabs.com/public/lbprox/raw/versions/latest/rocky-9-target.qcow2
 ```
 
 ```bash
-lbprox os-images create -u https://pulp03.lab.lightbitslabs.com/pulp/content/ubuntu-24.04-initiator/qcow2/latest/ubuntu-24.04-initiator.qcow2
+lbprox os-images create -u https://dl.lightbitslabs.com/public/lbprox/raw/versions/latest/ubuntu-24.04-initiator.qcow2
 ```
 
 List the os-images with the following command (filtered by iso):
