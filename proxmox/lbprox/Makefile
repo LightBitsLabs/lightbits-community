@@ -1,7 +1,7 @@
 IMAGE_REGISTRY:=$(or $(IMAGE_REGISTRY),lbdocker:5000)
 
 override GIT_VER := $(or $(shell git describe --tags --abbrev=8 --always --long --dirty),UNKNOWN)
-override GIT_TAG := $(or $(shell git describe --tags),UNKNOWN)
+override GIT_TAG := $(or $(shell git describe --exact-match --tags),UNKNOWN)
 override IMG_TAG := $(or $(IMG_TAG),$(GIT_VER))
 IMG := $(IMAGE_REGISTRY)/lbprox:$(IMG_TAG)
 
