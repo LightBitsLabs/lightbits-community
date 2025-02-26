@@ -131,3 +131,12 @@ machine_types:
       cores: 4
       base_memory: 12GB
       numa: 1
+
+  photon:
+    name: photon
+    os_image: ubuntu-24.04-photon
+    properties:
+      <<: [*bridge_network_config]
+      cores: 6
+      base_memory: 8GB
+      numa: 1
