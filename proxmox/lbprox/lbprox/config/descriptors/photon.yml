@@ -1,0 +1,6 @@
+name: photon
+description: "all in one photon server"
+machines:
+- name: photon
+  machine_type: photon
+  role: photon

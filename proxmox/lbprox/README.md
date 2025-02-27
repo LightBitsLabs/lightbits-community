@@ -13,6 +13,7 @@
     - [Install Lightbits On VMs](#install-lightbits-on-vms)
     - [Query cluster resources](#query-cluster-resources)
     - [Delete Everything](#delete-everything)
+  - [Deploy Photon on Proxmox using lbprox](#deploy-photon-on-proxmox-using-lbprox)
     - [Install `lbprox` python package in virtual-environment](#install-lbprox-python-package-in-virtual-environment)
   - [TODO](#todo)
 
@@ -308,6 +309,40 @@ Delete VMs one by one:
 lbprox allocations delete -a <allocation_id>
 ```
 
+## Deploy Photon on Proxmox using lbprox
+
+By utilizing the `lbprox` utility it is very easy to download and run a VM with `Phonon` pre-installed.
+
+Lightbits provides, via CloudSmith, pre-installed VM images containing `Photon` in them.
+
+Here is an example deployment of such a VM on Lightbits:
+
+> :exclamation: **NOTE:** Modify exported values according to your needs!
+
+```bash
+export PHOTON_VERSION=0.12.0-rc0
+export CLOUDSMITH_API_KEY=<YOUR_KEY_HERE>
+```
+
+First we will need to download the photon image to our Proxmox servers. The following command will do that for you:
+
+```bash
+lbprox os-images create \
+  -u https://dl.lightbitslabs.com/${CLOUDSMITH_API_KEY}/lb-photon/raw/versions/${PHOTON_VERSION}/ubuntu-24.04-photon.tar.gz?accept_eula=1
+```
+
+Behind the scene it will download the image, extract it, look for `qcow2` image, and upload it to Proxmox.
+
+You should see the image appear on the `lb-local-storage` storage defined in Proxmox, as the image shows:
+
+![alt text](image-1.png)
+
+All that is left to do is create a VM with the photon descriptor on that same Proxmox server `rack16-server01`
+
+```bash
+lbprox allocations create rack16-server01 -n photon
+```
+
 ### Install `lbprox` python package in virtual-environment
 
 <details>
@@ -361,5 +396,4 @@ deactivate
     and pass the nics to the VMs.
 
 2. Enable ssd passthrough.
-3. Add support for upload image from file - in `_create_os_image` we need an option to upload an os-image from file (sometimes we don't have a URL to download from)
-4. Add instructions during installation, don't create `local-lvm` Thin-LVM if you don't have additional SSD on the Proxmox machine, or post install we should add a command to replace the `local-lvm` thin provisioned.
+3. Add instructions during installation, don't create `local-lvm` Thin-LVM if you don't have additional SSD on the Proxmox machine, or post install we should add a command to replace the `local-lvm` thin provisioned.

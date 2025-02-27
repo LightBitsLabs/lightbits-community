@@ -3,6 +3,7 @@ jinja2
 proxmoxer
 prettytable
 requests
+requests_toolbelt
 PyYAML
 ipdb
 paramiko
