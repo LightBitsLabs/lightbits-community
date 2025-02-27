@@ -180,8 +180,9 @@ def nvme_initiator(ctx, allocation_id, base_url, run_deploy, stream_output=True)
     _deploy_nvme_initiator(ctx.obj.pve, allocation_id, base_url, run_deploy, stream_output)
 
 
-def _create_vm_on_proxmox(pve, ssh_client: ssh.SSHClient,
-                          hostname, storage_id, vm_name,
+def _create_vm_on_proxmox(pve,
+                          hostname, custom_user_data,
+                          storage_id, vm_name,
                           machine_name, machine_info,
                           tags: VMTags):
     free_vf_pci_id = None
@@ -237,9 +238,10 @@ def _create_vm_on_proxmox(pve, ssh_client: ssh.SSHClient,
                 pve.nodes(hostname).qemu(vmid).config.put(**{network['name']:
                                                              f"virtio,bridge={network['bridge']},firewall=1"})
 
-        ci = ci_snippets.CloudInit(ssh_client, storage_id)
+        # ci = ci_snippets.CloudInit(ssh_client, storage_id)
         # vm_hostname = f"{hostname}-{tags.get_allocation()}-{vm_name}"
-        user_data = ci.create_user_data(vm_name)
+        ci: ci_snippets.CloudInit = machine_info["cloud_init"]
+        user_data = ci.create_user_data(vm_name, custom_user_data)
         ci.upload_user_data(vmid, user_data)
         pve.nodes(hostname).qemu(vmid).config.put(**{"cicustom":
                                                      f"user={ci.user_data_volid(vmid)}"})
@@ -472,6 +474,10 @@ def _create_vms(pve, hostname, storage_id, allocation_descriptor_name,
 
         vm_hostname = generate_vm_name(hostname, allocation_info["allocation_id"], machine["name"])
 
+        ci = ci_snippets.CloudInit(ssh_client, storage_id)
+        machine_info["cloud_init"] = ci
+        custom_user_data = ci_snippets.generate_custom_photon_cloud_init() if machine_type == "photon" else None
+
         new_tags = VMTags().\
             set_node(hostname).\
             set_vm_name(vm_hostname).\
@@ -479,7 +485,7 @@ def _create_vms(pve, hostname, storage_id, allocation_descriptor_name,
             set_allocation(allocation_info["allocation_id"])
 
         # Get the next VM ID
-        vmid = _create_vm_on_proxmox(pve, ssh_client, hostname,
+        vmid = _create_vm_on_proxmox(pve, hostname, custom_user_data,
                                      storage_id, vm_hostname,
                                      machine["name"], machine_info, new_tags)
         if not vmid:
