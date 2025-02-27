@@ -1,6 +1,35 @@
 # CHANGELOG
 
 
+## v0.4.0 (2025-02-27)
+
+### Documentation
+
+- Document photon deployment on proxmox using lbprox
+  ([`b7f82d2`](https://github.com/LightBitsLabs/lightbits-community/commit/b7f82d277fcc135f5543c76132ac8aa5973d5b55))
+
+- Update README.md with external public os image urls
+  ([`e7106b3`](https://github.com/LightBitsLabs/lightbits-community/commit/e7106b31c24968a8e9bc5fae42606090bf1b6b28))
+
+### Features
+
+- Add support for creating photon VM by specifing custom cloud-init data
+  ([`61fd34d`](https://github.com/LightBitsLabs/lightbits-community/commit/61fd34d4c891fe64c820e067dd4ddb51cf1e04aa))
+
+- Add support for photon vm
+  ([`092884e`](https://github.com/LightBitsLabs/lightbits-community/commit/092884effc43d14c251af82ae6a9714e83401046))
+
+- Add support for uploading tar.gz from url (like cloudsmith)
+  ([`62b8501`](https://github.com/LightBitsLabs/lightbits-community/commit/62b8501fbd0aac142348221db6edc7aec8e2dc6b))
+
+this feat will allow us to specify external URL of tar.gz the lbprox will download the file, extract
+  it, look for qcow2 and if present will upload it to the node/nodes specified.
+
+also supported --force flag to create os-images to delete an existing image and upload a new one.
+
+by default it will not upload if the image is present on one of the nodes in the cluster.
+
+
 ## v0.3.0 (2025-02-19)
 
 ### Bug Fixes
