@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.5.0 (2025-03-26)
+
+### Bug Fixes
+
+- Update photon flavor - remove second nic
+  ([`2843caf`](https://github.com/LightBitsLabs/lightbits-community/commit/2843cafe1579a615b0645cd33930f36fc5eafdea))
+
+### Features
+
+- Allow running ad-hoc VMs from uploaded qcow images
+  ([`8680bc8`](https://github.com/LightBitsLabs/lightbits-community/commit/8680bc839f112fb91bc28fef04634cdea437de0a))
+
+
 ## v0.4.0 (2025-02-27)
 
 ### Documentation
