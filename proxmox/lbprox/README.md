@@ -10,6 +10,7 @@
     - [Create Simple Zone for hypervisor internal data network](#create-simple-zone-for-hypervisor-internal-data-network)
   - [Day-To-Day Operations](#day-to-day-operations)
     - [Flavors and Descriptors](#flavors-and-descriptors)
+    - [Create VM from uploaded image](#create-vm-from-uploaded-image)
     - [Install Lightbits On VMs](#install-lightbits-on-vms)
     - [Query cluster resources](#query-cluster-resources)
     - [Delete Everything](#delete-everything)
@@ -32,7 +33,7 @@ git clone https://github.com/LightBitsLabs/lightbits-community.git
 Define the following environment variable, specifying the lbprox image version:
 
 ```bash
-export LB_PROX_VERSION=v0.2.1
+export LB_PROX_VERSION=v0.5.0
 ```
 
 Next, create a `.env` file that would contain some of the env-vars we need for compose.
@@ -253,6 +254,20 @@ Running the following command will deploy the VMs described by selected descript
 
 ```bash
 lbprox allocations create <PROXMOX_NODE_NAME> -n lightbits_cluster_3x_target_tiny_1numa_emulated_ssd_1x_client
+```
+
+### Create VM from uploaded image
+
+Sometimes you would want to create a one-off VM that is not described by an existing flavor or descriptor.
+
+With the following command you can specify a VM with an existing image, and change some settings like: cpu, mem, disk-size, etc...
+
+```bash
+lbprox allocations create-from-img <PROXMOX_NODE_NAME> \
+  -i rocky-9-target \
+  --role k8s \
+  --machine-name k8s-master \
+  --cores 10
 ```
 
 > **NOTE:**

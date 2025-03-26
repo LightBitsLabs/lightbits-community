@@ -113,13 +113,67 @@ def create_vms(ctx, hostname, storage_id, allocation_descriptor_name,
     if tags is not None:
         tags = ";".join(tags)
     cluster_vms = _create_vms(ctx.obj.pve,
-                               hostname, storage_id,
-                               allocation_descriptor_name,
-                               start_vm, tags, wait_for_ip,
-                               ssh_username=ctx.obj.config["username"],
-                               ssh_password=ctx.obj.config["password"])
+                              hostname, storage_id,
+                              start_vm, tags, wait_for_ip,
+                              ssh_username=ctx.obj.config["username"],
+                              ssh_password=ctx.obj.config["password"],
+                              allocation_descriptor_name=allocation_descriptor_name)
     if cluster_vms:
         print(json.dumps(cluster_vms, indent=2))
+
+
+@allocations_group.command("create-from-img")
+@click.argument('hostname', required=True)
+@click.option('-s', '--storage-id', required=False, default="lb-local-storage")
+@click.option('-i', '--image-name', required=True, type=str)
+@click.option('-r', '--role', required=True, type=str)
+@click.option('-n', '--machine-name', required=True, type=str)
+@click.option('-c', '--cores', required=False, type=int, default=2)
+@click.option('-m', '--memory', required=False, type=str, default="4G")
+@click.option('-d', '--disk-size', required=False, type=str, default="20G")
+@click.option('-t', '--tags', default=None, multiple=True)
+@click.option('--start-vm/--no-start-vm', default=True)
+@click.option('--wait-for-ip/--no-wait-for-ip', default=True)
+@click.pass_context
+def create_vm_from_image(ctx, hostname, storage_id, image_name,
+                         role, machine_name, cores, memory, disk_size,
+                         tags, start_vm,
+                         wait_for_ip=True):
+    if tags is not None:
+        tags = ";".join(tags)
+
+    machine_info = {
+        "role": role,
+        "name": machine_name,
+        "os_image": image_name,
+        "properties": {
+            "cores": cores,
+            "base_memory": memory,
+            "ssds": {
+                "type": "emulated",
+                "count": 1,
+                "size": disk_size
+            },
+            "networks": [
+                {
+                    "type": "bridge",
+                    "name": "net0",
+                    "bridge": "vmbr0"
+                }
+            ],
+            "numa": False
+        }
+    }
+
+    cluster_vms = _create_vm_from_image(ctx.obj.pve,
+                                        hostname, storage_id,
+                                        start_vm, tags, wait_for_ip,
+                                        ssh_username=ctx.obj.config["username"],
+                                        ssh_password=ctx.obj.config["password"],
+                                        machine_info=machine_info)
+    if cluster_vms:
+        print(json.dumps(cluster_vms, indent=2))
+
 
 
 @allocations_group.command("delete")
@@ -452,9 +506,60 @@ def _start_vm(pve, hostname, vmid, wait_for_ip, expected_ip_addresses=1, tmo=60,
 def generate_vm_name(node_name, allocation_id, machine_name):
     return f"{node_name}-{allocation_id}-{machine_name}"
 
-def _create_vms(pve, hostname, storage_id, allocation_descriptor_name,
-                 start_vm, tags, wait_for_ip,
-                 ssh_username, ssh_password):
+
+def _create_vm_from_image(pve, hostname, storage_id,
+                start_vm, tags, wait_for_ip,
+                ssh_username, ssh_password,
+                machine_info):
+    allocation_info = {
+        "allocation_id": str(uuid.uuid4())[:4],
+        "servers": []
+    }
+
+    ssh_client = ssh.SSHClient(hostname, ssh_username, ssh_password)
+    vmids = []
+
+    vm_hostname = generate_vm_name(hostname,
+                                   allocation_info["allocation_id"],
+                                   machine_info["name"])
+
+    ci = ci_snippets.CloudInit(ssh_client, storage_id)
+    machine_info["cloud_init"] = ci
+    custom_user_data = None
+
+    new_tags = VMTags().\
+        set_node(hostname).\
+        set_vm_name(vm_hostname).\
+        set_role(machine_info["role"]).\
+        set_allocation(allocation_info["allocation_id"])
+
+    # Get the next VM ID
+    vmid = _create_vm_on_proxmox(pve, hostname, custom_user_data,
+                                 storage_id, vm_hostname,
+                                 machine_info["name"], machine_info, new_tags)
+    if not vmid:
+        logging.error(f"failed to allocate VM: {vm_hostname} named: {machine_info["name"]}")
+        return None
+    vmids.append(vmid)
+
+    if start_vm or wait_for_ip:
+        expected_ip_addresses = 2
+        args = [(pve, hostname, vmid, wait_for_ip, expected_ip_addresses) for vmid in vmids]
+        vm_info = threadpool.run_with_threadpool(_start_vm, args,
+                                                 desc="starting VMs", max_workers=10)
+        allocation_info["servers"].extend(vm_info)
+    else:
+        for vmid in vmids:
+            allocation_info["servers"].append({"vmid": vmid})
+
+    ssh_client.close()
+    return allocation_info
+
+
+def _create_vms(pve, hostname, storage_id,
+                start_vm, tags, wait_for_ip,
+                ssh_username, ssh_password,
+                allocation_descriptor_name):
     allocation_info = {
         "allocation_id": str(uuid.uuid4())[:4],
         "servers": []
