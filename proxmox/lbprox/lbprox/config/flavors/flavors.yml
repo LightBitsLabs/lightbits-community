@@ -136,7 +136,10 @@ machine_types:
     name: photon
     os_image: ubuntu-24.04-photon
     properties:
-      <<: [*bridge_network_config]
+      networks:
+      - name: net0
+        type: bridge # or - passthrough
+        bridge: vmbr0
       cores: 6
       base_memory: 8GB
       numa: 1
