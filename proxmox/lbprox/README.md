@@ -350,7 +350,7 @@ Behind the scene it will download the image, extract it, look for `qcow2` image,
 
 You should see the image appear on the `lb-local-storage` storage defined in Proxmox, as the image shows:
 
-![alt text](image-1.png)
+![alt text](assets/image-1.png)
 
 All that is left to do is create a VM with the photon descriptor on that same Proxmox server `rack16-server01`
 
