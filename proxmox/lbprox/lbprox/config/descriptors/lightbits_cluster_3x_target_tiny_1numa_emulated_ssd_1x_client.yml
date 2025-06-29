@@ -4,14 +4,20 @@ machines:
 - name: s00
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s01
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s02
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: client0
   machine_type: initiator-small

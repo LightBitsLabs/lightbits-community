@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+import getpass
 import os
 from jinja2 import Template
 import subprocess
 import logging
 from lbprox.common import utils
 from lbprox.common.constants import INVENTORIES_DIR
-import getpass
+from lbprox.common.vm_tags import VMTags
+
 
 
 hosts_template = """
@@ -135,8 +137,10 @@ def inventory_directory_exists(allocation_id: str):
     return os.path.exists(inventory_directory(allocation_id))
 
 
-def generate_inventory(allocation_id: str, cluster_info, initiators,
-                       repo_base_url: str, profile_name: str=None,
+def generate_inventory(allocation_id: str,
+                       cluster_info, initiators,
+                       repo_base_url: str,
+                       profile_name: str=None,
                        ec_enabled: bool=False,
                        initial_device_count: int=4,
                        light_app_path: str=None):
@@ -178,7 +182,16 @@ def generate_inventory(allocation_id: str, cluster_info, initiators,
     host_vars_dir = os.path.join(cluster_inventory_dir, "host_vars")
     os.makedirs(host_vars_dir, exist_ok=True)
     for server_name, server_info in cluster_info['servers'].items():
-        profile_name = profile_name if profile_name else 'virtual-datapath-templates'
+        # take profile_name from tags, unless it is provided from the CLI
+        # if none provided use 'virtual-datapath-templates' as default
+        tags: VMTags = server_info["tags"]
+        if profile_name is None:
+            profile_name = 'virtual-datapath-templates'
+            if tags.get_tag('datapath_profile'):
+                profile_name = tags.get_tag('datapath_profile')
+        else:
+            profile_name = profile_name.strip()
+
         data = {
             'profile_name': profile_name,
             'server': server_info,

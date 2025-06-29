@@ -4,50 +4,74 @@ machines:
 - name: s00
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s01
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s02
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s03
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s04
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s05
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s06
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s07
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s08
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s09
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s10
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: s11
   machine_type: target-tiny-1numa-emulated-ssd
   role: target
+  annotations:
+    datapath_profile: tiny-virtual-datapath-templates
 
 - name: client0
   machine_type: initiator-small

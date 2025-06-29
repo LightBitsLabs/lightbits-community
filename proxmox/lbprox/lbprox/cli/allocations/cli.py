@@ -403,7 +403,7 @@ def _generate_inventory(ctx, allocation_id,
             "data_ip": data_ip,
             "access_ip": access_ip,
             "vmid": vmid,
-            "tags": tags.str(),
+            "tags": tags,
         }
         if tags.str() != vm.get('tags', ""):
             ctx.obj.pve.nodes(hostname).qemu(vmid).config.put(tags=tags.str())
@@ -443,7 +443,7 @@ def _generate_inventory(ctx, allocation_id,
             "data_ip": data_ip,
             "access_ip": access_ip,
             "vmid": vmid,
-            "tags": tags.str(),
+            "tags": tags,
         }
         if tags.str() != vm.get('tags', ""):
             ctx.obj.pve.nodes(hostname).qemu(vmid).config.put(tags=tags.str())
@@ -589,6 +589,9 @@ def _create_vms(pve, hostname, storage_id,
             set_vm_name(vm_hostname).\
             set_role(machine["role"]).\
             set_allocation(allocation_info["allocation_id"])
+
+        for annotation_key, annotation_value in machine_info["annotations"].items():
+            new_tags.set_tag(annotation_key, annotation_value)
 
         # Get the next VM ID
         vmid = _create_vm_on_proxmox(pve, hostname, custom_user_data,
