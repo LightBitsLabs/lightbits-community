@@ -154,18 +154,46 @@ On the Proxmox server run the following command to open all VFs on available Mel
 lbprox setup-data-network
 ```
 
+### Verify access network is set-up `vmbr0` exists on the node
+
+When we install proxmox we should tell it which interface to use, as access interface.
+
+The installation will create a bridge so that the VMs will be accessible over this bridge
+and that the VMs will be able to communicate with the host.
+
+When we inaugurate with a preinstalled image, we don't have this interface setup, hence
+this command will verify that this bridge is setup and configured correctly.
+
+basically it will enslave the default interface to the vmbr0 bridge and will set the ip
+on that bridge.
+
+```bash
+lbprox --debug access-network create
+```
+
 ### Create Simple Zone for hypervisor internal data network
 
 In order to provide isolation, and DHCP inside each Proxmox node we can utilize the simple Zone network.
 
-> NOTE:
+> **NOTE:**
 >
 > install `dnsmasq` on each proxmox node to get this functionality using:
 >
 > ```bash
 > apt update -y
 > apt install dnsmasq -y
-> NOTE: Now there are 2 dnsmasq services - dnsmasq and dnsmasq@<network_name> - we should disable the default one. (`network_name` is data0 in our example)
+> ```
+
+> **NOTE:**
+>
+> Now there are 2 dnsmasq services:
+>
+> - dnsmasq.service
+> - dnsmasq@<network_name>.service
+>
+> We MUST disable the default one. (`network_name` is data0 in our example)
+>
+> ```bash
 > systemctl disable dnsmasq.service
 > ```
 

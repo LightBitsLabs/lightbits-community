@@ -576,6 +576,7 @@ def _create_vms(pve, hostname, storage_id,
     for machine in allocation_descriptor["machines"]:
         machine_type = machine["machine_type"]
         machine_info = types['machine_types'][machine_type]
+        machine_info["annotations"] = machine.get('annotations', {})
 
         vm_hostname = generate_vm_name(hostname, allocation_info["allocation_id"], machine["name"])
 

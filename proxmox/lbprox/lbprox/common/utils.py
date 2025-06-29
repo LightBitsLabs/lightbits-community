@@ -9,6 +9,7 @@ import sys
 import proxmoxer
 
 from lbprox.common.vm_tags import VMTags
+from lbprox.ssh import ssh
 
 
 def basicConfig(debug=False):
@@ -121,10 +122,35 @@ def zero_out_host_bits(cidr):
     return network.ip & network_mask
 
 
+def get_or_create_access_bridge(pve, hostname, bridge_name,
+                                ssh_username, ssh_password):
+    net_devices = pve.nodes(hostname).network.get()
+    access_bridge_network = (next(iter([dev for dev in net_devices if dev["iface"] == bridge_name]), None))
+
+    if access_bridge_network:
+        assert access_bridge_network["cidr"], "we assume we have this bridge network as our access network"
+        return access_bridge_network
+
+    ssh_client = ssh.SSHClient(hostname, ssh_username, ssh_password)
+    default_iface, cidr, gateway = ssh_client.get_network_info_via_ssh()
+    if not default_iface:
+        logging.error("could not determine default interface.")
+        return None
+
+    ssh_client.close()
+    pve.nodes(hostname).network.post(iface=bridge_name, type="bridge",
+                                     cidr=cidr, autostart='1',
+                                     gateway=gateway,
+                                     bridge_ports=default_iface)
+
+    pve.nodes(hostname).network().put()
+    access_bridge_network = pve.nodes(hostname).network.get(bridge_name)
+    return access_bridge_network
+
+
 def get_vm_ip_address(pve, hostname, vmid, expected_ip_addresses=1, tmo=60, interval=10):
     count = 1 if (tmo == 0 or interval == 0) else (tmo // interval)
     access_bridge_network = pve.nodes(hostname).network.get("vmbr0")
-    assert access_bridge_network and access_bridge_network["cidr"], "we assume we have this bridge network as our access network"
     access_network = ipaddress.IPv4Interface(access_bridge_network["cidr"]).network
 
     ipv4_addresses = []
