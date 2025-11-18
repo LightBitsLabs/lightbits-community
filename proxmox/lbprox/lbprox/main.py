@@ -17,6 +17,7 @@ from lbprox.common.app_context import AppContext
 from lbprox.cli.image_store.cli import image_store_group
 from lbprox.cli.data_network.cli import data_network_group
 from lbprox.cli.nodes.cli import nodes_group
+from lbprox.temporal.proxmox_worker import temporal_group
 from lbprox.cli.os_images.cli import os_images_group
 from lbprox.cli.allocations.cli import allocations_group
 from lbprox.cli.dashboard.cli import dashboard_group
@@ -76,6 +77,7 @@ def list_cluster_vms(ctx, tags):
 
 def main():
     cli.add_command(nodes_group)
+    cli.add_command(temporal_group)
     cli.add_command(allocations_group)
     cli.add_command(data_network_group)
     cli.add_command(image_store_group)
