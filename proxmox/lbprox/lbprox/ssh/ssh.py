@@ -5,15 +5,16 @@ import re
 
 
 class SSHClient(object):
-    def __init__(self, hostname: str, username: str, password: str):
+    def __init__(self, hostname: str, username: str, password: str, timeout: int = 30):
         self.hostname = hostname
         self.username = username
         self.password = password
+        self.timeout = timeout
         self.client = self.connect()
 
     def reconnect(self):
         self.close()
-        self.connect()
+        self.client = self.connect()
 
     def connect(self):
         client = paramiko.SSHClient()
@@ -26,13 +27,37 @@ class SSHClient(object):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         try:
-            client.connect(self.hostname, username=self.username, password=self.password)
-        except paramiko.ssh_exception.BadHostKeyException:
+            logging.debug(f"Attempting SSH connection to {self.hostname} with timeout={self.timeout}s")
+            client.connect(
+                self.hostname,
+                username=self.username,
+                password=self.password,
+                timeout=self.timeout,
+                banner_timeout=self.timeout,
+                auth_timeout=self.timeout,
+                allow_agent=False,
+                look_for_keys=False
+            )
+            logging.debug(f"Successfully connected to {self.hostname}")
+        except paramiko.ssh_exception.BadHostKeyException as e:
+            logging.warning(f"Bad host key for {self.hostname}, removing and retrying")
             # Remove the old host key from known_hosts
             self._remove_host_key(self.hostname, known_hosts)
             # Try connecting again, now the host key will be accepted and saved
             client.load_host_keys(known_hosts)
-            client.connect(self.hostname, username=self.username, password=self.password)
+            client.connect(
+                self.hostname,
+                username=self.username,
+                password=self.password,
+                timeout=self.timeout,
+                banner_timeout=self.timeout,
+                auth_timeout=self.timeout,
+                allow_agent=False,
+                look_for_keys=False
+            )
+        except Exception as e:
+            logging.error(f"Failed to connect to {self.hostname}: {type(e).__name__}: {str(e)}")
+            raise
 
         return client
 

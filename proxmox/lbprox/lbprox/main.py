@@ -11,93 +11,18 @@ import urllib3
 http.client.HTTPConnection.debuglevel = 0
 
 from lbprox.common.vm_tags import VMTags
-import proxmoxer as proxmox
 from lbprox.common import utils
+from lbprox.common.app_context import AppContext
 
 from lbprox.cli.image_store.cli import image_store_group
 from lbprox.cli.data_network.cli import data_network_group
 from lbprox.cli.nodes.cli import nodes_group
+from lbprox.temporal.proxmox_worker import temporal_group
 from lbprox.cli.os_images.cli import os_images_group
 from lbprox.cli.allocations.cli import allocations_group
 from lbprox.cli.dashboard.cli import dashboard_group
 from lbprox.cli.prom_discovery.cli import prom_discovery_group
 from lbprox.common import constants
-
-
-class AppContext(object):
-    def __init__(self, username: str, password: str,
-                 config_file: str, debug: bool=False):
-        self.debug = debug
-        self.config_file = config_file
-        config_from_file = self.load_config(config_file)
-        if username is not None:
-            config_from_file["username"] = username
-        if password is not None:
-            config_from_file["password"] = password
-        config_from_file["debug"] = debug
-        if config_from_file.get("light_app_path", None) is None:
-            workspace_top = os.environ.get("WORKSPACE_TOP", None)
-            assert workspace_top,\
-                "light_app_path not provided, please provide it in the config file or as an environment variable: WORKSPACE_TOP"
-            light_app_path = os.path.join(workspace_top, "light-app")
-            assert os.path.exists(light_app_path), \
-                f"light-app path does not exist: '{light_app_path}'."\
-                " Please provide it in the config file or as an environment variable: WORKSPACE_TOP"
-            config_from_file["light_app_path"] = light_app_path
-        assert config_from_file.get("username", None),\
-            "username not provided, please provide it in the config file or as a command line argument"
-        assert config_from_file.get("password", None),\
-            "password not provided, please provide it in the config file or as a command line argument"
-
-        self.config = config_from_file
-        logging.debug(f"loaded config from: {config_file} merged config: {self.config}")
-        self.pve, last_active_hostname = self.get_proxmox_api(self.config)
-        assert self.pve, f"failed to create Proxmox API object: {self.config}"
-        # update last know active node
-        last_active = self.config.get("last_active", None)
-        if last_active is None or last_active != last_active_hostname:
-            self.config["last_active"] = last_active_hostname
-            self.save_config(config_file, self.config)
-        assert self.pve, f"failed to create Proxmox API object: {self.config}"
-        # self.ssh_client = ssh.SSHClient(last_active_hostname, "root", "light")
-        # assert self.ssh_client, f"failed to create SSH client object: {last_active_hostname}"
-
-    def load_config(self, config_file):
-        with open(config_file, 'r', encoding='utf-8') as f:
-            return yaml.load(f.read(), Loader=yaml.FullLoader)
-
-    def save_config(self, config_file, config):
-        with open(config_file, 'w', encoding='utf-8') as f:
-            yaml.dump(config, f)
-
-    def get_proxmox_api(self, config, timeout=15):
-        # Create a Proxmox API object
-        last_active = config.get("last_active", None)
-        if last_active:
-            try:
-                urllib3.HTTPConnectionPool(last_active, maxsize=10, block=True)
-                pve = proxmox.ProxmoxAPI(host=last_active,
-                                         user=f"{config['username']}@pam",
-                                         password=config['password'],
-                                         verify_ssl=False,
-                                         timeout=timeout)
-                return pve, last_active
-            except Exception as ex:
-                logging.warning(f"failed to connect to last active: {last_active}. will look for new active: {ex}")
-
-        for node in config["nodes"]:
-            hostname = node.get('hostname')
-            try:
-                urllib3.HTTPConnectionPool(hostname, maxsize=10, block=True)
-                pve = proxmox.ProxmoxAPI(host=hostname,
-                                         user=f"{config['username']}@pam",
-                                         password=config['password'],
-                                         verify_ssl=False,
-                                         timeout=timeout)
-                return pve, hostname
-            except Exception as ex:
-                logging.warning(f"failed to connect to {hostname}: {ex}. keep looking...")
-        return None, None
 
 
 @click.group(name="proxmox")
@@ -136,7 +61,7 @@ def cli(ctx, username, password, debug, config_file):
 
     if ctx.params['password'] is None:
         logging.debug("password not provided.")
-    ctx.obj = AppContext(username, password, config_file, debug)
+    ctx.obj = AppContext.create(username, password, config_file, debug)
 
 
 @cli.command()
@@ -152,6 +77,7 @@ def list_cluster_vms(ctx, tags):
 
 def main():
     cli.add_command(nodes_group)
+    cli.add_command(temporal_group)
     cli.add_command(allocations_group)
     cli.add_command(data_network_group)
     cli.add_command(image_store_group)
