@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # Enhanced Unified Cluster Federation Deployment Script
-# Supports: Ubuntu, Debian, AlmaLinux, RHEL, CentOS, Rocky Linux, Fedora
+# Supports: Ubuntu, Debian, AlmaLinux, Rocky Linux
 # Features: Multi-OS support with OS-specific YAML quoting, enhanced Cloudsmith integration, comprehensive error handling
-# Version: 3.2
+# Version: 3.4 - Component versions now sourced from canonical cf.env in Ansible package
 #
 
 set -e  # Exit on error
@@ -13,7 +13,7 @@ set -o pipefail  # Catch errors in pipes
 # GLOBAL VARIABLES
 # ============================================================================
 
-SCRIPT_VERSION="3.2"
+SCRIPT_VERSION="3.4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="/tmp/cf_deploy_$(date +%Y%m%d_%H%M%S).log"
 DEPLOY_DIR=""
@@ -27,10 +27,20 @@ APP_VERSION=""
 CF_IMG_VERSION=""
 PROJECT_NAME="default"
 DEPLOY_LOCAL=false
+
+# Version variables (sourced from canonical cf.env)
+PROMETHEUS_VERSION=""
+NODE_EXPORTER_VERSION=""
+GRAFANA_VERSION=""
+TEMPORAL_ADMIN_TOOLS_VERSION=""
+TEMPORAL_VERSION=""
+TEMPORAL_UI_VERSION=""
+POSTGRESQL_VERSION=""
 OS_ID=""
 OS_VERSION=""
 OS_FAMILY=""
 PKG_MGR=""
+NON_INTERACTIVE=false
 
 # Colors for output
 RED='\033[0;31m'
@@ -145,7 +155,7 @@ get_package_manager() {
             ;;
         *)
             print_error "Unsupported OS: $OS_ID"
-            print_info "Supported: Ubuntu, Debian, AlmaLinux, RHEL, CentOS, Rocky Linux, Fedora"
+            print_info "Supported: Ubuntu, Debian, AlmaLinux, Rocky Linux"
             exit 1
             ;;
     esac
@@ -158,10 +168,22 @@ update_package_cache() {
     print_info "Updating package cache..."
     case "$PKG_MGR" in
         apt)
-            apt-get update -qq
+            if [ "$NON_INTERACTIVE" = true ]; then
+                # Show progress in non-interactive mode to avoid appearing stuck
+                apt-get update
+            else
+                # Quiet mode for interactive use
+                apt-get update -qq
+            fi
             ;;
         dnf|yum)
-            $PKG_MGR makecache -q
+            if [ "$NON_INTERACTIVE" = true ]; then
+                # Show progress in non-interactive mode
+                $PKG_MGR makecache
+            else
+                # Quiet mode for interactive use
+                $PKG_MGR makecache -q
+            fi
             ;;
     esac
     print_success "Package cache updated"
@@ -203,6 +225,153 @@ install_package() {
 # VALIDATION FUNCTIONS
 # ============================================================================
 
+show_usage() {
+    cat <<'EOF'
+Usage: deploy_cf_unified.sh [OPTIONS]
+
+OPTIONS:
+    --non-interactive    Run in non-interactive mode (requires environment variables)
+    --list-versions      List all available CF versions from CloudSmith and exit
+    --help              Show this help message
+
+INTERACTIVE MODE (default):
+    The script will prompt for all required information interactively.
+
+NON-INTERACTIVE MODE:
+    Set the following environment variables before running the script:
+    
+    Required:
+        CF_CLOUDSMITH_API_KEY    CloudSmith API key for authentication
+        CF_VERSION               CF version to deploy (e.g., v0.9.2-0-g628d56a7)
+                                 Can also be set to "latest" to use the most recent version
+    
+    Optional:
+        CF_PROJECT_NAME          Project name (default: "default")
+        CF_SKIP_DISK_CHECK       Skip disk space check (set to "true" or "1")
+    
+    Example:
+        export CF_CLOUDSMITH_API_KEY="your-api-key-here"
+        export CF_VERSION="v0.9.2-0-g628d56a7"
+        export CF_PROJECT_NAME="production"
+        ./deploy_cf_unified.sh --non-interactive
+
+    Example (from Python):
+        import subprocess
+        import os
+        
+        env = os.environ.copy()
+        env['CF_CLOUDSMITH_API_KEY'] = 'your-api-key'
+        env['CF_VERSION'] = 'v0.9.2-0-g628d56a7'
+        env['CF_PROJECT_NAME'] = 'production'
+        
+        result = subprocess.run(
+            ['./deploy_cf_unified.sh', '--non-interactive'],
+            env=env,
+            capture_output=True,
+            text=True
+        )
+
+LIST VERSIONS:
+    Query CloudSmith to display all available CF versions:
+    
+        export CF_CLOUDSMITH_API_KEY="your-api-key-here"
+        ./deploy_cf_unified.sh --list-versions
+
+EOF
+    exit 0
+}
+
+list_versions() {
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Cluster Federation - Available Versions"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    # Check for API key
+    if [ -z "$CF_CLOUDSMITH_API_KEY" ]; then
+        printf "${RED}ERROR:${NC} CF_CLOUDSMITH_API_KEY environment variable is required\n"
+        echo ""
+        echo "Usage:"
+        echo "  export CF_CLOUDSMITH_API_KEY=\"your-api-key\""
+        echo "  $0 --list-versions"
+        exit 1
+    fi
+    
+    CLOUDSMITH_API_KEY="$CF_CLOUDSMITH_API_KEY"
+    
+    # Install jq if not available
+    if ! command -v jq &>/dev/null; then
+        echo "Installing jq (required for JSON parsing)..."
+        if command -v apt-get &>/dev/null; then
+            apt-get update -qq && apt-get install -y -qq jq
+        elif command -v dnf &>/dev/null; then
+            dnf install -y -q jq
+        elif command -v yum &>/dev/null; then
+            yum install -y -q jq
+        else
+            printf "${RED}ERROR:${NC} Cannot install jq. Please install it manually.\n"
+            exit 1
+        fi
+    fi
+    
+    echo "Fetching available versions from CloudSmith..."
+    echo ""
+    
+    # Fetch available image tags
+    local tags_json=$(curl -s -u "$CLOUDSMITH_USERNAME:$CLOUDSMITH_API_KEY" \
+        "https://docker.lightbitslabs.com/v2/cf/cluster-federation/tags/list" 2>/dev/null)
+    
+    if [ -z "$tags_json" ] || ! echo "$tags_json" | jq -e '.tags' &>/dev/null; then
+        printf "${RED}ERROR:${NC} Could not fetch versions from CloudSmith API\n"
+        echo "Please verify:"
+        echo "  1. Your API key is correct"
+        echo "  2. You have access to the CF repository"
+        echo "  3. Network connectivity to CloudSmith"
+        exit 1
+    fi
+    
+    # Parse and sort versions
+    local versions=$(echo "$tags_json" | jq -r '.tags[]' | sort -V -r)
+    local version_count=$(echo "$versions" | wc -l)
+    
+    if [ "$version_count" -eq 0 ]; then
+        printf "${RED}ERROR:${NC} No versions found in CloudSmith\n"
+        exit 1
+    fi
+    
+    printf "${GREEN}Found $version_count available versions:${NC}\n"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    # Display versions
+    local i=1
+    while IFS= read -r version; do
+        if [ -n "$version" ]; then
+            # Highlight latest version
+            if [ $i -eq 1 ]; then
+                printf "  ${GREEN}%3d. %s (latest)${NC}\n" "$i" "$version"
+            else
+                printf "  %3d. %s\n" "$i" "$version"
+            fi
+            i=$((i + 1))
+        fi
+    done <<< "$versions"
+    
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "To deploy a specific version (example):"
+    echo "  export CF_VERSION=\"v0.9.2-0-g628d56a7\""
+    echo "  ./deploy_cf_unified.sh --non-interactive"
+    echo ""
+    echo "To deploy the latest version:"
+    echo "  export CF_VERSION=\"latest\""
+    echo "  ./deploy_cf_unified.sh --non-interactive"
+    echo ""
+    
+    exit 0
+}
+
 check_root() {
     if [ "$EUID" -ne 0 ]; then
         print_error "This script must be run as root"
@@ -217,21 +386,34 @@ check_disk_space() {
     
     if [ "$available_gb" -lt "$required_gb" ]; then
         print_warning "Low disk space: ${available_gb}GB available (${required_gb}GB recommended)"
-        while true; do
-            read -p "Continue anyway? (yes/no): " response
-            case "$response" in
-                yes)
-                    break
-                    ;;
-                no)
-                    print_info "Deployment cancelled by user"
-                    exit 1
-                    ;;
-                *)
-                    print_error "Please enter 'yes' or 'no'"
-                    ;;
-            esac
-        done
+        
+        # In non-interactive mode, check environment variable
+        if [ "$NON_INTERACTIVE" = true ]; then
+            if [ "$CF_SKIP_DISK_CHECK" = "true" ] || [ "$CF_SKIP_DISK_CHECK" = "1" ]; then
+                print_warning "Continuing despite low disk space (CF_SKIP_DISK_CHECK is set)"
+            else
+                print_error "Insufficient disk space and CF_SKIP_DISK_CHECK not set"
+                print_info "Set CF_SKIP_DISK_CHECK=true to override this check"
+                exit 1
+            fi
+        else
+            # Interactive mode - ask user
+            while true; do
+                read -p "Continue anyway? (yes/no): " response
+                case "$response" in
+                    yes)
+                        break
+                        ;;
+                    no)
+                        print_info "Deployment cancelled by user"
+                        exit 1
+                        ;;
+                    *)
+                        print_error "Please enter 'yes' or 'no'"
+                        ;;
+                esac
+            done
+        fi
     else
         print_success "Disk space check passed: ${available_gb}GB available"
     fi
@@ -481,10 +663,57 @@ setup_ssh_keys() {
 # ============================================================================
 
 select_cf_version() {
-    print_info "Fetching available CF versions from CloudSmith..."
-    
     # Install jq for JSON parsing
     install_package "jq" "jq (JSON processor)"
+    
+    # In non-interactive mode, use CF_VERSION environment variable
+    if [ "$NON_INTERACTIVE" = true ]; then
+        if [ -z "$CF_VERSION" ]; then
+            print_error "CF_VERSION environment variable is required in non-interactive mode"
+            print_info "Set CF_VERSION to a specific version (e.g., v0.9.2-0-g628d56a7) or 'latest'"
+            exit 1
+        fi
+        
+        # If CF_VERSION is "latest", fetch the latest version
+        if [ "$CF_VERSION" = "latest" ]; then
+            print_info "Fetching latest CF version from CloudSmith..."
+            local tags_json=$(curl -s -u "$CLOUDSMITH_USERNAME:$CLOUDSMITH_API_KEY" \
+                "https://docker.lightbitslabs.com/v2/cf/cluster-federation/tags/list" 2>/dev/null)
+            
+            if [ -z "$tags_json" ] || ! echo "$tags_json" | jq -e '.tags' &>/dev/null; then
+                print_error "Could not fetch versions from CloudSmith API"
+                exit 1
+            fi
+            
+            # Get the latest version (first in reverse sorted list)
+            CF_IMG_VERSION=$(echo "$tags_json" | jq -r '.tags[]' | sort -V -r | head -1)
+            
+            if [ -z "$CF_IMG_VERSION" ]; then
+                print_error "No versions found in CloudSmith"
+                exit 1
+            fi
+            
+            print_success "Latest CF version: $CF_IMG_VERSION"
+        else
+            # Use the specified version
+            CF_IMG_VERSION="$CF_VERSION"
+            print_info "Using specified CF version: $CF_IMG_VERSION"
+            
+            # Validate the version exists
+            if ! validate_cf_version "$CF_IMG_VERSION"; then
+                print_error "CF version $CF_IMG_VERSION not found in CloudSmith"
+                exit 1
+            fi
+        fi
+        
+        # Extract APP_VERSION from CF_IMG_VERSION
+        APP_VERSION=$(echo "$CF_IMG_VERSION" | cut -d'-' -f1)
+        print_success "Using Ansible package version: $APP_VERSION"
+        return
+    fi
+    
+    # Interactive mode (original behavior)
+    print_info "Fetching available CF versions from CloudSmith..."
     
     # Fetch available image tags
     local tags_json=$(curl -s -u "$CLOUDSMITH_USERNAME:$CLOUDSMITH_API_KEY" \
@@ -587,6 +816,81 @@ select_cf_version() {
 # DOCKER-COMPOSE.YML VERSION OVERRIDE
 # ============================================================================
 
+# ============================================================================
+# SOURCE VERSION VARIABLES FROM CANONICAL CF.ENV
+# ============================================================================
+
+source_version_variables() {
+    local canonical_cf_env="$ANSIBLE_DIR/cf.env"
+    
+    if [ ! -f "$canonical_cf_env" ]; then
+        print_error "Canonical cf.env file not found at: $canonical_cf_env"
+        print_error "This file should be included in the CF Ansible package"
+        exit 1
+    fi
+    
+    print_info "Sourcing version variables from canonical cf.env..."
+    
+    # Source the file and extract version variables
+    # Using a subshell to avoid polluting the current environment
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        [[ "$key" =~ ^#.*$ ]] && continue
+        [[ -z "$key" ]] && continue
+        
+        # Remove any quotes from the value
+        value=$(echo "$value" | sed -e "s/^[\"']//; s/[\"']$//")
+        
+        case "$key" in
+            PROMETHEUS_VERSION)
+                PROMETHEUS_VERSION="$value"
+                ;;
+            NODE_EXPORTER_VERSION)
+                NODE_EXPORTER_VERSION="$value"
+                ;;
+            GRAFANA_VERSION)
+                GRAFANA_VERSION="$value"
+                ;;
+            TEMPORAL_ADMIN_TOOLS_VERSION)
+                TEMPORAL_ADMIN_TOOLS_VERSION="$value"
+                ;;
+            TEMPORAL_VERSION)
+                TEMPORAL_VERSION="$value"
+                ;;
+            TEMPORAL_UI_VERSION)
+                TEMPORAL_UI_VERSION="$value"
+                ;;
+            POSTGRESQL_VERSION)
+                POSTGRESQL_VERSION="$value"
+                ;;
+        esac
+    done < "$canonical_cf_env"
+    
+    # Validate that all required versions were sourced
+    local missing_versions=()
+    [ -z "$PROMETHEUS_VERSION" ] && missing_versions+=("PROMETHEUS_VERSION")
+    [ -z "$NODE_EXPORTER_VERSION" ] && missing_versions+=("NODE_EXPORTER_VERSION")
+    [ -z "$GRAFANA_VERSION" ] && missing_versions+=("GRAFANA_VERSION")
+    [ -z "$TEMPORAL_ADMIN_TOOLS_VERSION" ] && missing_versions+=("TEMPORAL_ADMIN_TOOLS_VERSION")
+    [ -z "$TEMPORAL_VERSION" ] && missing_versions+=("TEMPORAL_VERSION")
+    [ -z "$TEMPORAL_UI_VERSION" ] && missing_versions+=("TEMPORAL_UI_VERSION")
+    [ -z "$POSTGRESQL_VERSION" ] && missing_versions+=("POSTGRESQL_VERSION")
+    
+    if [ ${#missing_versions[@]} -gt 0 ]; then
+        print_error "Missing version variables in cf.env: ${missing_versions[*]}"
+        exit 1
+    fi
+    
+    print_success "Version variables sourced successfully:"
+    print_info "  PROMETHEUS_VERSION: $PROMETHEUS_VERSION"
+    print_info "  NODE_EXPORTER_VERSION: $NODE_EXPORTER_VERSION"
+    print_info "  GRAFANA_VERSION: $GRAFANA_VERSION"
+    print_info "  TEMPORAL_ADMIN_TOOLS_VERSION: $TEMPORAL_ADMIN_TOOLS_VERSION"
+    print_info "  TEMPORAL_VERSION: $TEMPORAL_VERSION"
+    print_info "  TEMPORAL_UI_VERSION: $TEMPORAL_UI_VERSION"
+    print_info "  POSTGRESQL_VERSION: $POSTGRESQL_VERSION"
+}
+
 apply_version_overrides() {
     local compose_file="$ANSIBLE_DIR/docker-compose.yml"
     
@@ -665,19 +969,45 @@ ENDSSH
 # ============================================================================
 
 main() {
+    # Parse command-line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --non-interactive)
+                NON_INTERACTIVE=true
+                shift
+                ;;
+            --list-versions)
+                list_versions
+                ;;
+            --help)
+                show_usage
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                show_usage
+                ;;
+        esac
+    done
+    
     # Clear screen if available (optional on minimal systems)
     command -v clear &>/dev/null && clear
     cat <<'EOF'
 ================================================================================
                                                                               
     Cluster Federation Enhanced Deployment Script                           
-    Version: 3.2                                                             
-    Multi-OS Support: Ubuntu, Debian, AlmaLinux, RHEL, CentOS, Rocky        
+    Version: 3.4                                                             
+    Multi-OS Support: Ubuntu, Debian, AlmaLinux, Rocky Linux
                                                                               
 ================================================================================
 EOF
     echo ""
     print_info "Log file: $LOG_FILE"
+    
+    if [ "$NON_INTERACTIVE" = true ]; then
+        print_info "Running in NON-INTERACTIVE mode"
+    else
+        print_info "Running in INTERACTIVE mode"
+    fi
     echo ""
     
     # Setup logging first to capture all output
@@ -723,7 +1053,18 @@ EOF
     # ========================================================================
     print_step "STEP 4: CloudSmith Configuration"
     
-    read -p "Enter CloudSmith API Key: " CLOUDSMITH_API_KEY
+    if [ "$NON_INTERACTIVE" = true ]; then
+        # Non-interactive mode: read from environment variable
+        if [ -z "$CF_CLOUDSMITH_API_KEY" ]; then
+            print_error "CF_CLOUDSMITH_API_KEY environment variable is required in non-interactive mode"
+            exit 1
+        fi
+        CLOUDSMITH_API_KEY="$CF_CLOUDSMITH_API_KEY"
+        print_info "Using CloudSmith API key from environment variable"
+    else
+        # Interactive mode: prompt user
+        read -p "Enter CloudSmith API Key: " CLOUDSMITH_API_KEY
+    fi
     
     # Validate credentials
     if ! validate_cloudsmith_credentials; then
@@ -749,9 +1090,16 @@ EOF
     # ========================================================================
     print_step "STEP 6: Project Configuration"
     
-    read -p "Enter project name for Cluster Federation [default: default]: " PROJECT_NAME
-    PROJECT_NAME=${PROJECT_NAME:-default}
-    print_info "Project name: $PROJECT_NAME"
+    if [ "$NON_INTERACTIVE" = true ]; then
+        # Non-interactive mode: read from environment variable or use default
+        PROJECT_NAME="${CF_PROJECT_NAME:-default}"
+        print_info "Project name: $PROJECT_NAME"
+    else
+        # Interactive mode: prompt user
+        read -p "Enter project name for Cluster Federation [default: default]: " PROJECT_NAME
+        PROJECT_NAME=${PROJECT_NAME:-default}
+        print_info "Project name: $PROJECT_NAME"
+    fi
     
     if [ "$PROJECT_NAME" != "default" ]; then
         print_info "Using custom project name: $PROJECT_NAME"
@@ -834,6 +1182,9 @@ tar xzf '$DOWNLOAD_FILE'
         ls -la "$DEPLOY_DIR"
         exit 1
     fi
+    
+    # Source version variables from the canonical cf.env file
+    source_version_variables
     
     # Patch playbook for YAML quoting - different behavior needed for Ubuntu vs RHEL-based systems
     # Ubuntu 24.04: Needs quotes REMOVED to prevent Docker image tag issues
@@ -926,6 +1277,20 @@ tar xzf '$DOWNLOAD_FILE'
             print_success "Playbook patched for Rocky Linux 10 compatibility"
         else
             print_info "Playbook already includes required packages (patch not needed)"
+        fi
+    fi
+    
+    # Patch ansible-cf-role to include gnupg2 (Rocky Linux 10 compatibility)
+    CF_ROLE_MAIN="$ANSIBLE_DIR/roles/ansible-cf-role/tasks/main.yml"
+    if [ -f "$CF_ROLE_MAIN" ]; then
+        # Check if gnupg2 is already in the package list
+        if ! grep -q "gnupg2" "$CF_ROLE_MAIN"; then
+            print_info "Applying Rocky Linux 10 compatibility patch (adding gnupg2)..."
+            # Add gnupg2 to the package list after nvme-cli
+            sed -i '/- nvme-cli/a \    - gnupg2' "$CF_ROLE_MAIN"
+            print_success "Ansible role patched for Rocky Linux 10 compatibility"
+        else
+            print_info "Ansible role already includes gnupg2 (patch not needed)"
         fi
     fi
     
@@ -1103,15 +1468,16 @@ docker_users:
 APP_VERSION: $APP_VERSION
 CF_IMG_VERSION: $CF_IMG_VERSION
 
-PROMETHEUS_VERSION: v3.3.1
-NODE_EXPORTER_VERSION: v1.9.1
-GRAFANA_VERSION: 11.3.2
+# Component versions (sourced from canonical cf.env)
+PROMETHEUS_VERSION: $PROMETHEUS_VERSION
+NODE_EXPORTER_VERSION: $NODE_EXPORTER_VERSION
+GRAFANA_VERSION: $GRAFANA_VERSION
 
-TEMPORAL_ADMIN_TOOLS_VERSION: 1.27.2-tctl-1.18.2-cli-1.3.0
-TEMPORAL_VERSION: 1.27.2
-TEMPORAL_UI_VERSION: 2.37.2
+TEMPORAL_ADMIN_TOOLS_VERSION: $TEMPORAL_ADMIN_TOOLS_VERSION
+TEMPORAL_VERSION: $TEMPORAL_VERSION
+TEMPORAL_UI_VERSION: $TEMPORAL_UI_VERSION
 
-POSTGRESQL_VERSION: 13
+POSTGRESQL_VERSION: $POSTGRESQL_VERSION
 
 # Image paths - CF from lightbits, others from public registries
 # YAML requires quotes when values start with {{ (Jinja2 template syntax)
@@ -1126,30 +1492,17 @@ EOF
     
     print_success "Configuration created"
 
-    # Create/update cf.env file in the Ansible package directory
-    # This file is read by the playbook and takes precedence over group_vars
-    print_info "Creating cf.env file with selected versions..."
+    # Update cf.env file in the Ansible package directory with CF version info
+    # Note: Component versions (Prometheus, Grafana, Temporal, etc.) are already in the canonical cf.env
+    # We only need to update APP_VERSION and CF_IMG_VERSION which are selected during deployment
+    print_info "Updating cf.env file with selected CF versions..."
     su - ansible-user -c "
-cat <<EOF > $ANSIBLE_DIR/cf.env
-# CF Version Configuration
-APP_VERSION=$APP_VERSION
-CF_IMG_VERSION=$CF_IMG_VERSION
-
-# Observability versions
-PROMETHEUS_VERSION=v3.3.1
-NODE_EXPORTER_VERSION=v1.9.1
-GRAFANA_VERSION=11.3.2
-
-# Temporal versions
-TEMPORAL_ADMIN_TOOLS_VERSION=1.27.2-tctl-1.18.2-cli-1.3.0
-TEMPORAL_VERSION=1.27.2
-TEMPORAL_UI_VERSION=2.37.2
-
-# PostgreSQL version
-POSTGRESQL_VERSION=13
-EOF
+# Update APP_VERSION and CF_IMG_VERSION in the existing cf.env file
+sed -i 's/^APP_VERSION=.*/APP_VERSION=$APP_VERSION/' $ANSIBLE_DIR/cf.env
+sed -i 's/^CF_IMG_VERSION=.*/CF_IMG_VERSION=$CF_IMG_VERSION/' $ANSIBLE_DIR/cf.env
 "
-    print_success "cf.env file created with CF_IMG_VERSION=$CF_IMG_VERSION"
+    print_success "cf.env file updated with CF_IMG_VERSION=$CF_IMG_VERSION and APP_VERSION=$APP_VERSION"
+    print_info "Component versions are sourced from the canonical cf.env in the Ansible package"
 
     # Apply version overrides to docker-compose.yml
     apply_version_overrides
