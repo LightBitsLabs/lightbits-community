@@ -289,8 +289,9 @@ def _create_vm_on_proxmox(pve,
                 logging.debug(f"attaching VF: {free_vf_pci_id} to VM: {vmid}")
             elif network["type"] == "bridge":
                 # attach virtual network interface
+                import ipdb; ipdb.set_trace()
                 pve.nodes(hostname).qemu(vmid).config.put(**{network['name']:
-                                                             f"virtio,bridge={network['bridge']},firewall=1"})
+                                                             f"virtio,bridge={network['bridge']},firewall=0"})
 
         # ci = ci_snippets.CloudInit(ssh_client, storage_id)
         # vm_hostname = f"{hostname}-{tags.get_allocation()}-{vm_name}"
@@ -564,12 +565,10 @@ def _create_vms(pve, hostname, storage_id,
         "allocation_id": str(uuid.uuid4())[:4],
         "servers": []
     }
-
     allocation_descriptor = allocation_descriptors.allocation_descriptor_by_name(allocation_descriptor_name)
     if not allocation_descriptor:
         logging.error(f"allocation descriptor not found: {allocation_descriptor_name}")
         return None
-
     ssh_client = ssh.SSHClient(hostname, ssh_username, ssh_password)
     vmids = []
     types = flavors.list_machine_types()

@@ -68,18 +68,9 @@ def os_images_group():
 def create_os_image(ctx, storage_id, url, nodes, force):
     # NOTE: we assume here that the imgfile.tar.gz file contains a single .qcow2 file
     # which has the name imgfile.qcow2. It will be uploaded as imgfile.img
-    proxmox_img_name = _proxmox_img_name(url)
-    volid = f"{storage_id}:iso/{proxmox_img_name}"
-    if _does_img_exists_on_cluster(ctx.obj.pve, storage_id, volid, nodes):
-        print(f"image '{proxmox_img_name}' already exists on the cluster. Use --force to update.")
-        if not force:
-            return
-        else:
-            print("force update. first delete the image, then create it.")
-            _delete_os_image(ctx.obj.pve, storage_id, volid, nodes)
-    _create_os_image(ctx, storage_id, url, nodes)
-
-
+    should_create_image =_handle_existing_image(ctx.obj.pve, storage_id, url, nodes, force)
+    if should_create_image:
+        _create_os_image(ctx.obj.pve, ctx.obj.config, storage_id, url, nodes)
 
 @os_images_group.command("delete")
 @click.option('-s', '--storage-id', required=False, default="lb-local-storage",
@@ -127,17 +118,33 @@ def _proxmox_img_name(url):
         raise RuntimeError(f"unsupported file format: {basename}")
 
 
+def _handle_existing_image(pve, storage_id, url, desired_nodes, force):
+    proxmox_img_name = _proxmox_img_name(url)
+    volid = f"{storage_id}:iso/{proxmox_img_name}"
+    if _does_img_exists_on_cluster(pve, storage_id, volid, desired_nodes):
+        print(f"image '{proxmox_img_name}' already exists on the cluster. Use --force to update.")
+        if not force:
+            return False
+        else:
+            print("force update. first delete the image, then create it.")
+            _delete_os_image(pve, storage_id, volid, desired_nodes)
 
-def _create_os_image(ctx, storage_id, url: str, nodes: List):
+    return True
+
+def _create_os_image(pve, config, storage_id, url: str, desired_nodes: List):
     # POST /api2/json/nodes/{node}/storage/{storage}/download-url
     # when downloading using the url we can only store .img files - so we rename the file
     # files are stored in /mnt/pve/{storage_id}/templates/iso
-    pve = ctx.obj.pve
-    node_list = nodes if nodes else pve.nodes.get()
-    node_names = [node.get('node') for node in node_list]
+    cluster_nodes = pve.nodes.get()
+    if desired_nodes:
+        nodes = [node for node in cluster_nodes if node["node"] in desired_nodes]
+    else:
+        nodes = [node for node in cluster_nodes]
+
+    node_names = [node.get('node') for node in nodes]
     basename = extract_basename(url)
     if basename.endswith(".tar.gz"):
-        _handle_tar_gz_file(ctx, node_names, storage_id, url, basename)
+        _handle_tar_gz_file(config, node_names, storage_id, url, basename)
     else:
         # image_name is the name of the image under proxmox - usually the same as the file name with .img
         image_name = _proxmox_img_name(url)
@@ -164,7 +171,7 @@ def find_qcow2_file(directory):
     return None  # No .qcow2 file found
 
 
-def _handle_tar_gz_file(ctx, node_names, storage_id, url, basename):
+def _handle_tar_gz_file(config, node_names, storage_id, url, basename):
     """Handle tar.gz files - this will extract and upload the .img file
     the file will be downloaded and extracted in a temporary directory
     and the .img file will be uploaded to the Proxmox node's storage"""
@@ -189,8 +196,8 @@ def _handle_tar_gz_file(ctx, node_names, storage_id, url, basename):
         os.rename(filename, filename.replace(".qcow2", ".img"))
         filename = filename.replace(".qcow2", ".img")
 
-        username = ctx.obj.config["username"]
-        password = ctx.obj.config["password"]
+        username = config["username"]
+        password = config["password"]
         for node_name in node_names:
             # we have a special case for the local file upload since
             # proxmoxer does not support it.
