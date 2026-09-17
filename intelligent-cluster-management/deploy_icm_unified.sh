@@ -1128,8 +1128,10 @@ main() {
         esac
     done
     
-    # Clear screen if available (optional on minimal systems)
-    command -v clear &>/dev/null && clear
+    # Clear screen if available (optional on minimal systems). Never fatal: under
+    # `set -e`, `clear` exits non-zero when TERM is unset (headless ssh / CI with
+    # no PTY), which would otherwise abort the whole script before it starts.
+    command -v clear &>/dev/null && clear 2>/dev/null || true
     cat <<EOF
 ================================================================================
 
@@ -1587,10 +1589,13 @@ TEMPORAL_UI_VERSION: $TEMPORAL_UI_VERSION
 
 POSTGRESQL_VERSION: $POSTGRESQL_VERSION
 
-# Image paths - ICM from lightbits, others from public registries
+# Image paths - ICM and discovery-client (both proprietary) from the ICM
+# CloudSmith repo under docker.lightbitslabs.com/icm/<image>; the third-party
+# images from their public registries.
 # YAML requires quotes when values start with {{ (Jinja2 template syntax)
 # The quotes are YAML syntax and are removed during parsing - they don't cause double-quoting
 icm_img: \"{{ image_registry }}/icm/intelligent-cluster-management:{{ ICM_IMG_VERSION }}\"
+discovery_client_img: \"{{ image_registry }}/icm/discovery-client:{{ DISCOVERY_CLIENT_VERSION }}\"
 temporal_img: \"temporalio/auto-setup:{{ TEMPORAL_VERSION }}\"
 temporal_admintools_img: \"temporalio/admin-tools:{{ TEMPORAL_ADMIN_TOOLS_VERSION }}\"
 temporal_ui_img: \"temporalio/ui:{{ TEMPORAL_UI_VERSION }}\"
