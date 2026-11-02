@@ -5,9 +5,11 @@
 # Features: Multi-OS support with OS-specific YAML quoting, enhanced Cloudsmith integration, comprehensive error handling
 # Version: 1.0 - Ansible controller runs from a pinned ansible-user venv on
 #                python >= 3.12 (ansible-core 2.21.3 / ansible 14.3.0) instead
-#                of the system python (CVE-2026-11332 — LBM1-47347). Hosts
-#                without a stock python >= 3.12 fail fast with the supported
-#                OS/interpreter matrix.
+#                of the system python, so every deployment runs the same
+#                security-patched controller stack regardless of what the OS
+#                ships. Hosts where no python >= 3.12 can be provisioned from
+#                stock repos fail fast with the supported OS/interpreter
+#                matrix.
 #
 
 set -e  # Exit on error
@@ -46,7 +48,8 @@ OS_FAMILY=""
 PKG_MGR=""
 NON_INTERACTIVE=false
 
-# Pinned Ansible controller stack (LBM1-47347 / CVE-2026-11332).
+# Pinned Ansible controller stack: these versions carry security fixes absent
+# from older OS-packaged releases, so the pin must not be loosened.
 # Installed into a dedicated ansible-user-owned venv — never into the system
 # python. ansible-core 2.21.x requires python >= 3.12 on the controller.
 ANSIBLE_CORE_VERSION="2.21.3"
@@ -502,24 +505,25 @@ validate_icm_version() {
 # DOCKER INSTALLATION (MULTI-OS)
 # ============================================================================
 
-install_docker_ubuntu_debian() {
-    print_info "Installing Docker for Ubuntu/Debian..."
-    
+# setup_docker_repo_ubuntu_debian configures Docker's official apt repo (GPG key
+# + source list + cache refresh) without installing any package, so both the full
+# engine install and a Compose-plugin-only upgrade can share it.
+setup_docker_repo_ubuntu_debian() {
     # Install prerequisites
     install_package "ca-certificates"
     install_package "curl"
     install_package "gnupg"
-    
+
     # Add Docker's official GPG key
     install -m 0755 -d /etc/apt/keyrings
-    
+
     if [ "$OS_ID" = "ubuntu" ]; then
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     else
         curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
     fi
     chmod a+r /etc/apt/keyrings/docker.asc
-    
+
     # Set up the repository
     if [ "$OS_ID" = "ubuntu" ]; then
         echo \
@@ -532,10 +536,15 @@ install_docker_ubuntu_debian() {
           $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
           tee /etc/apt/sources.list.d/docker.list > /dev/null
     fi
-    
+
     # Update package cache
     apt-get update -qq
-    
+}
+
+install_docker_ubuntu_debian() {
+    print_info "Installing Docker for Ubuntu/Debian..."
+    setup_docker_repo_ubuntu_debian
+
     # Install Docker packages
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
         docker-ce \
@@ -543,42 +552,115 @@ install_docker_ubuntu_debian() {
         containerd.io \
         docker-buildx-plugin \
         docker-compose-plugin
-    
+
     print_success "Docker installed for Ubuntu/Debian"
 }
 
-install_docker_rhel_based() {
-    print_info "Installing Docker for RHEL-based systems..."
-    
+# setup_docker_repo_rhel_based configures Docker's official yum/dnf repo (plus the
+# container-selinux prerequisite probe) without installing any package, so both the
+# full engine install and a Compose-plugin-only upgrade can share it.
+setup_docker_repo_rhel_based() {
     # Install prerequisites
     install_package "$PKG_MGR-plugins-core" "DNF plugins"
     install_package "gnupg2" "GnuPG for GPG key verification"
-    
+
     # Add Docker repository
     if [ "$OS_ID" = "fedora" ]; then
         $PKG_MGR config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
     else
         $PKG_MGR config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
     fi
-    
+
+    # docker-ce/containerd.io depend on container-selinux, which ships only in
+    # the entitled RHEL AppStream (Fedora carries it in its base repos). Probe it
+    # before the install so an unsubscribed RHEL host fails here with a clear
+    # prerequisite instead of the cryptic "nothing provides container-selinux"
+    # dnf error mid-install. A host that already has it, or any repo (RHEL
+    # AppStream, Rocky/Alma) that offers it, passes — the repo id is never pinned,
+    # as it differs across distros, versions and custom mirrors.
+    case "$OS_ID" in
+        rhel|centos|almalinux|rocky)
+            if ! rpm -q container-selinux &>/dev/null \
+                && ! $PKG_MGR -q list --available container-selinux &>/dev/null; then
+                print_error "container-selinux is not installed and is not available from any enabled repository."
+                print_error "docker-ce/containerd.io require it; on RHEL it ships in the AppStream repo."
+                print_error "Register this RHEL host and enable its AppStream repo, or deploy on Rocky/AlmaLinux 9/10 whose AppStream provides it out of the box."
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+install_docker_rhel_based() {
+    print_info "Installing Docker for RHEL-based systems..."
+    setup_docker_repo_rhel_based
+
     # Install Docker packages
     $PKG_MGR install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    
+
     print_success "Docker installed for RHEL-based system"
+}
+
+# compose_version_ge_2220 succeeds iff the ACTIVE `docker compose` plugin is
+# >= 2.22.0 — the floor the missing-only pre-pull (community.docker
+# docker_compose_v2_pull, policy: missing) needs. It reads the version Docker
+# actually selects (a shadowing plugin under /usr/local/lib/docker/cli-plugins
+# wins over the package one), so it doubles as the post-install verification.
+# The `|| true`/`|| semver=""` guards keep it safe under `set -e`/`pipefail`:
+# an unparseable or absent version is a clean non-zero return, not a script abort.
+compose_version_ge_2220() {
+    local raw semver
+    raw=$(docker compose version 2>/dev/null) || return 1
+    semver=$(printf '%s' "$raw" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1) || semver=""
+    [ -n "$semver" ] || return 1
+    [ "$(printf '%s\n2.22.0\n' "$semver" | sort -V | head -1)" = "2.22.0" ]
+}
+
+# install_compose_plugin configures Docker's repo and installs/upgrades ONLY the
+# docker-compose-plugin package — deliberately not docker-ce/containerd.io — so an
+# already-running Docker engine (and its containers) is not restarted just to get
+# a newer Compose.
+install_compose_plugin() {
+    case "$PKG_MGR" in
+        apt)
+            setup_docker_repo_ubuntu_debian
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-plugin
+            ;;
+        dnf|yum)
+            setup_docker_repo_rhel_based
+            $PKG_MGR install -y -q docker-compose-plugin
+            ;;
+        *)
+            print_error "Cannot install the Docker Compose plugin on $OS_ID ($PKG_MGR)"
+            exit 1
+            ;;
+    esac
 }
 
 install_docker() {
     if command -v docker &>/dev/null; then
         local docker_version=$(docker --version)
         print_success "Docker already installed: $docker_version"
-        
-        if docker compose version &>/dev/null; then
-            local compose_version=$(docker compose version)
-            print_success "Docker Compose already installed: $compose_version"
+
+        if compose_version_ge_2220; then
+            print_success "Docker Compose already installed: $(docker compose version)"
             return 0
         fi
+
+        # Engine is present but Compose is missing or older than the 2.22.0 floor.
+        # Upgrade the plugin alone — reinstalling docker-ce/containerd here could
+        # restart the daemon and stop containers that are already running.
+        print_warning "Docker present but the Compose plugin is missing or < 2.22.0; installing the compose plugin only."
+        install_compose_plugin
+        if ! compose_version_ge_2220; then
+            print_error "Docker Compose is still < 2.22.0 after installing the plugin."
+            print_error "A shadowing plugin in /usr/local/lib/docker/cli-plugins likely wins over the packaged one; remove it and re-run."
+            exit 1
+        fi
+        print_success "Docker Compose upgraded: $(docker compose version)"
+        return 0
     fi
-    
+
     case "$OS_ID" in
         ubuntu|debian)
             install_docker_ubuntu_debian
@@ -591,19 +673,20 @@ install_docker() {
             exit 1
             ;;
     esac
-    
+
     # Enable and start Docker
     systemctl enable docker
     systemctl start docker
-    
-    # Verify installation
-    if docker --version && docker compose version; then
-        print_success "Docker and Docker Compose installed successfully"
+
+    # Verify installation — engine present AND the ACTIVE Compose plugin is new
+    # enough for the pre-pull (not merely that some `docker compose` resolves).
+    if docker --version &>/dev/null && compose_version_ge_2220; then
+        print_success "Docker and Docker Compose installed successfully: $(docker compose version)"
     else
-        print_error "Docker installation verification failed"
+        print_error "Docker installation verification failed (engine missing or Compose < 2.22.0)"
         exit 1
     fi
-    
+
     # Add ansible-user to docker group (now that docker group exists)
     if ! groups ansible-user | grep -q docker; then
         usermod -aG docker ansible-user
@@ -634,7 +717,7 @@ create_ansible_user() {
 }
 
 # ============================================================================
-# ANSIBLE CONTROLLER PROVISIONING (pinned venv — LBM1-47347)
+# ANSIBLE CONTROLLER PROVISIONING (pinned venv)
 # ============================================================================
 
 # resolve_controller_python resolves a python >= 3.12 interpreter for the
@@ -1478,7 +1561,7 @@ cd $ANSIBLE_DIR
 # community.docker is installed ONLY via the pinned requirements.yml below (no
 # unpinned direct install that would override the pin), and these installs are
 # fail-closed: a failed pinned install must abort the deploy rather than leave
-# an unpinned/older collection in place (LBM1-46314).
+# an unpinned/older collection in place.
 ansible-galaxy install -r roles/ansible-docker-role/requirements.yml --force
 ansible-galaxy install -r roles/ansible-observability-role/requirements.yml --force
 "
@@ -1589,9 +1672,9 @@ TEMPORAL_UI_VERSION: $TEMPORAL_UI_VERSION
 
 POSTGRESQL_VERSION: $POSTGRESQL_VERSION
 
-# Image paths - ICM and discovery-client (both proprietary) from the ICM
-# CloudSmith repo under docker.lightbitslabs.com/icm/<image>; the third-party
-# images from their public registries.
+# Image paths - ICM and discovery-client from the Lightbits CloudSmith repo
+# under docker.lightbitslabs.com/icm/<image>; the third-party images from
+# their public registries.
 # YAML requires quotes when values start with {{ (Jinja2 template syntax)
 # The quotes are YAML syntax and are removed during parsing - they don't cause double-quoting
 icm_img: \"{{ image_registry }}/icm/intelligent-cluster-management:{{ ICM_IMG_VERSION }}\"

@@ -16,6 +16,8 @@ ICM's Ansible controller requires **Python ≥ 3.12**, so the supported deploy h
 
 > **Not supported**: Ubuntu 22.04 and Debian 12 — their stock `python3` is older than 3.12.
 
+> **RHEL subscription required**: On RHEL the host must be registered with its **AppStream** repo enabled. AppStream provides both `python3.12` and `container-selinux` (a `docker-ce`/`containerd.io` dependency); without it Docker installation fails. AlmaLinux and Rocky Linux 9/10 provide both from their default AppStream, so no subscription is needed there.
+
 ## Prerequisites
 
 ### System Requirements
@@ -356,6 +358,31 @@ ss -tuln | grep -E '443|8080|8082'
 ```
 
 If ports are in use, stop conflicting services before deployment.
+
+### Thick Clone Fails (`no local block device`)
+
+Thick clone / data mobility copies data by attaching volumes to the ICM host over NVMe/TCP (via the
+bundled `discovery-client`). If a clone workflow fails at the `detectVolumeAttached` stage with
+`no local block device for volume ...`, the volume's block device did not appear on the ICM host
+within the retry window. This has several possible causes — the device taking longer than the retry
+window to attach, or an unavailable primary node on the source cluster — but on a standalone deploy
+the most common one is that the ICM host cannot reach the attached clusters' **storage (NVMe)
+network**: the deploy script configures ICM services but does not provision a data-network interface.
+Management connectivity is enough to deploy and attach clusters, but thick clone additionally needs
+the ICM host on the clusters' NVMe network.
+
+```bash
+# From the ICM host, every attached cluster's data endpoints must be reachable —
+# the discovery service (port 8009) and the I/O controllers (port 4420) on each
+# cluster's nvmeEndpoint addresses.
+
+# After giving the ICM host an interface/route on the storage network, restart the
+# discovery-client so it reconnects (it will not pick up a NIC added after it started):
+docker restart discovery-client
+
+# Confirm every cluster connects — expect no "failed with all ... connections" lines:
+docker logs --since 60s discovery-client | grep -E 'connected successfully|failed with all'
+```
 
 ## Advanced Usage
 
